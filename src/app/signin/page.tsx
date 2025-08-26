@@ -22,10 +22,6 @@ export default function SignInPage() {
         router.push("/");
       } else if (res.status === "need-email") {
         setError("Enter your email to complete sign-in.");
-      } else if (res.status === "access-denied") {
-        setError(
-          `Access denied. Your email (${res.email}) is not authorized to use this application.`
-        );
       }
     })();
   }, [router]);

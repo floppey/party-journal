@@ -5,6 +5,7 @@ import Sidebar from "./notes/Sidebar";
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
+import { usePermissions } from "../hooks/usePermissions";
 
 function UnauthenticatedLanding() {
   return (
@@ -40,6 +41,8 @@ function UnauthenticatedLanding() {
 
 function AuthenticatedLanding() {
   const [hasNotes, setHasNotes] = useState(false);
+  const { user } = useAuth();
+  const { isAllowed, loading: permissionsLoading } = usePermissions(user?.email);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "notes"), (snap) => {
@@ -47,6 +50,57 @@ function AuthenticatedLanding() {
     });
     return () => unsub();
   }, []);
+
+  // Show loading state while checking permissions
+  if (permissionsLoading) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p style={{ color: "var(--muted)" }}>Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if user is not allowed
+  if (!isAllowed) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
+      >
+        <div
+          className="p-8 rounded shadow w-full max-w-md text-center"
+          style={{
+            backgroundColor: "var(--surface)",
+            color: "var(--foreground)",
+          }}
+        >
+          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+          <p className="mb-6" style={{ color: "var(--muted)" }}>
+            Your email ({user?.email}) is not authorized to use this application.
+          </p>
+          <button
+            onClick={() => window.location.href = "/signin"}
+            className="inline-block py-2 px-4 rounded hover:opacity-90"
+            style={{ backgroundColor: "#dc2626", color: "#fff" }}
+          >
+            Sign out and try different account
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
