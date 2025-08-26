@@ -10,14 +10,15 @@ import {
   createBlock,
   deleteBlock,
   updateNote,
-  canEdit,
 } from "../notes";
 import { useAuth } from "../auth";
 import { Markdown } from "./Markdown";
+import { usePermissions } from "../hooks/usePermissions";
 
 export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const [note, setNote] = useState<Note | null>(null);
   const { user, loading: authLoading } = useAuth();
+  const { canEdit: canUserEdit, loading: permissionsLoading } = usePermissions(user?.email);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [editorText, setEditorText] = useState("");
@@ -151,15 +152,12 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
   };
 
   const canCurrentUserEdit = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (url.searchParams.get("dev") === "1") return true;
-    }
-    return !!user && !!note ? canEdit(note, user.uid, user.email) : false;
-  }, [user, note]);
+    // Use server-side permissions
+    return canUserEdit;
+  }, [canUserEdit]);
   const markdown = editorText;
 
-  if (loading || authLoading) return <div>Loading...</div>;
+  if (loading || authLoading || permissionsLoading) return <div>Loading...</div>;
   if (!note) return <div>Note not found.</div>;
 
   return (
