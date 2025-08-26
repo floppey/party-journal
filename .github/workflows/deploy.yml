@@ -36,20 +36,7 @@ jobs:
           static_site_generator: next
 
       - name: Build with Next.js
-        run: |
-          echo "Running Next.js build..."
-          npm run build
-          echo "Build completed. Checking outputs..."
-          ls -la
-          if [ -d "out" ]; then
-            echo "✅ out directory exists"
-            ls -la out/
-          else
-            echo "❌ out directory does not exist"
-            echo "Trying alternative build without turbopack..."
-            npx next build
-            ls -la
-          fi
+        run: npm run build
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -59,20 +46,15 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           ALLOWED_USERS: ${{ secrets.ALLOWED_USERS  }}
 
-      - name: Debug - List build outputs
+      - name: Verify export output
         run: |
-          echo "Current directory contents:"
-          ls -la
-          echo "Looking for out directory:"
-          ls -la out/ || echo "out directory does not exist"
-          echo "Package.json scripts:"
-          cat package.json | grep -A 10 '"scripts"'
+          ls -la out/
+          echo "✅ Static export contains $(ls -1 out/ | wc -l) files"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
-        if: hashFiles('./out/**') != ''
 
   deploy:
     environment:
