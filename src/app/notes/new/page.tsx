@@ -1,12 +1,12 @@
 // src/app/notes/new/page.tsx
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createNote } from "../../../notes";
 import { useAuth } from "../../../auth";
 import { canUserEdit } from "../../../permissions";
 
-export default function NewNotePage() {
+function NewNoteForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -92,5 +92,13 @@ export default function NewNotePage() {
       </button>
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>
+  );
+}
+
+export default function NewNotePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewNoteForm />
+    </Suspense>
   );
 }
