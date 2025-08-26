@@ -1,16 +1,30 @@
 // src/app/signin/page.tsx
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   signInWithGoogle,
   sendEmailLink,
   completeEmailLinkSignIn,
+  completeEmailLinkIfPresent,
 } from "../../auth";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    (async () => {
+      const res = await completeEmailLinkIfPresent();
+      if (res.status === "signed-in") {
+        router.push("/");
+      } else if (res.status === "need-email") {
+        setError("Enter your email to complete sign-in.");
+      }
+    })();
+  }, [router]);
 
   const handleGoogle = async () => {
     try {
@@ -36,6 +50,7 @@ export default function SignInPage() {
   const handleCompleteEmailSignIn = async () => {
     try {
       await completeEmailLinkSignIn(email);
+      router.push("/");
     } catch (e: unknown) {
       if (e instanceof Error) setError(e.message);
       else setError("Unknown error");
@@ -43,8 +58,20 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded shadow w-full max-w-md">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center"
+      style={{
+        backgroundColor: "var(--background)",
+        color: "var(--foreground)",
+      }}
+    >
+      <div
+        className="p-8 rounded shadow w-full max-w-md"
+        style={{
+          backgroundColor: "var(--surface)",
+          color: "var(--foreground)",
+        }}
+      >
         <h1 className="text-2xl font-bold mb-4">Sign In</h1>
         <button
           className="w-full py-2 px-4 bg-blue-600 text-white rounded mb-4 hover:bg-blue-700"
