@@ -36,20 +36,43 @@ jobs:
           static_site_generator: next
 
       - name: Build with Next.js
-        run: npm run build
+        run: |
+          echo "Running Next.js build..."
+          npm run build
+          echo "Build completed. Checking outputs..."
+          ls -la
+          if [ -d "out" ]; then
+            echo "✅ out directory exists"
+            ls -la out/
+          else
+            echo "❌ out directory does not exist"
+            echo "Trying alternative build without turbopack..."
+            npx next build
+            ls -la
+          fi
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET  }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID  }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          ALLOWED_USERS: ${{ secrets.ALLOWED_USERS }}
+          ALLOWED_USERS: ${{ secrets.ALLOWED_USERS  }}
+
+      - name: Debug - List build outputs
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Looking for out directory:"
+          ls -la out/ || echo "out directory does not exist"
+          echo "Package.json scripts:"
+          cat package.json | grep -A 10 '"scripts"'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
+        if: hashFiles('./out/**') != ''
 
   deploy:
     environment:
