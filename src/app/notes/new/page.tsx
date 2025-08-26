@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createNote } from "../../../notes";
 import { useAuth } from "../../../auth";
-import { canUserEdit } from "../../../permissions";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 function NewNoteForm() {
   const [title, setTitle] = useState("");
@@ -14,14 +14,15 @@ function NewNoteForm() {
   const router = useRouter();
   const search = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { canEdit, loading: permissionsLoading } = usePermissions(user?.email);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/signin");
-    } else if (user && !canUserEdit(user.email)) {
+    } else if (user && !permissionsLoading && !canEdit) {
       setError("You don't have permission to create notes.");
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, permissionsLoading, canEdit]);
 
   // Prefill title from query string
   useEffect(() => {

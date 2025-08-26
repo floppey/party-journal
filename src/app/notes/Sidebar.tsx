@@ -8,7 +8,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { createNoteWithBlock, updateNote } from "../../notes";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth";
-import { canUserEdit } from "../../permissions";
+import { usePermissions } from "../../hooks/usePermissions";
 
 type UINote = Note & { id: string; parentId?: string | null };
 type TreeNode = { id: string; note: UINote; children: TreeNode[] };
@@ -119,6 +119,7 @@ export default function Sidebar() {
   const [dragOverRoot, setDragOverRoot] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
+  const { canEdit } = usePermissions(user?.email);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "notes"), (snap) => {
@@ -175,7 +176,7 @@ export default function Sidebar() {
       if (!user) return;
 
       // Check if user has edit permissions
-      if (!canUserEdit(user.email)) {
+      if (!canEdit) {
         alert("You don't have permission to create notes.");
         return;
       }
@@ -197,7 +198,7 @@ export default function Sidebar() {
       router.push(`/notes/${newId}`);
       setMenu(null);
     },
-    [router, user]
+    [router, user, canEdit]
   );
 
   const onContextMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {

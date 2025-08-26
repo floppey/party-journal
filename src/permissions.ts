@@ -7,7 +7,7 @@ export type UserRole = "admin" | "editor" | "viewer";
 function loadAllowedUsers(): Record<string, { email: string; role: UserRole }> {
   const allowedUsers: Record<string, { email: string; role: UserRole }> = {};
 
-  // Parse ALLOWED_USERS environment variable
+  // Parse ALLOWED_USERS environment variable (server-side only)
   // Format: "email1:role1,email2:role2,email3:role3"
   const allowedUsersEnv = process.env.ALLOWED_USERS || "";
 

@@ -4,10 +4,11 @@ import { useAuth, logout } from "../auth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createNoteWithBlock } from "../notes";
-import { canUserEdit, isAdmin } from "../permissions";
+import { usePermissions } from "../hooks/usePermissions";
 
 export default function Header() {
   const { user } = useAuth();
+  const { canEdit, isAdmin } = usePermissions(user?.email);
   const [creating, setCreating] = useState(false);
   const router = useRouter();
 
@@ -30,7 +31,7 @@ export default function Header() {
           <span>Party Journal</span>
         </Link>
         <div className="flex items-center gap-3">
-          {user && canUserEdit(user.email) && (
+          {user && canEdit && (
             <button
               onClick={async () => {
                 if (creating) return;
@@ -61,7 +62,7 @@ export default function Header() {
           )}
           {user ? (
             <>
-              {isAdmin(user.email) && (
+              {isAdmin && (
                 <Link
                   href="/admin"
                   className="text-sm px-3 py-1 rounded"
