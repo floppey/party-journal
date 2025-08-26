@@ -42,7 +42,9 @@ function UnauthenticatedLanding() {
 function AuthenticatedLanding() {
   const [hasNotes, setHasNotes] = useState(false);
   const { user } = useAuth();
-  const { isAllowed, loading: permissionsLoading } = usePermissions(user?.email);
+  const { isAllowed, loading: permissionsLoading } = usePermissions(
+    user?.email
+  );
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "notes"), (snap) => {
@@ -88,10 +90,11 @@ function AuthenticatedLanding() {
         >
           <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
           <p className="mb-6" style={{ color: "var(--muted)" }}>
-            Your email ({user?.email}) is not authorized to use this application.
+            Your email ({user?.email}) is not authorized to use this
+            application.
           </p>
           <button
-            onClick={() => window.location.href = "/signin"}
+            onClick={() => (window.location.href = "/signin")}
             className="inline-block py-2 px-4 rounded hover:opacity-90"
             style={{ backgroundColor: "#dc2626", color: "#fff" }}
           >

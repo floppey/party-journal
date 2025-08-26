@@ -1,7 +1,7 @@
 // Client-side hook for server-side permission checks
 "use client";
-import { useEffect, useState } from 'react';
-import { UserRole } from '../permissions';
+import { useEffect, useState } from "react";
+import { UserRole } from "../permissions";
 
 interface PermissionResult {
   isAllowed: boolean;
@@ -15,7 +15,9 @@ interface UsePermissionsResult extends PermissionResult {
   error: string | null;
 }
 
-export function usePermissions(email: string | null | undefined): UsePermissionsResult {
+export function usePermissions(
+  email: string | null | undefined
+): UsePermissionsResult {
   const [permissions, setPermissions] = useState<PermissionResult>({
     isAllowed: false,
     canEdit: false,
@@ -42,22 +44,22 @@ export function usePermissions(email: string | null | undefined): UsePermissions
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/permissions', {
-          method: 'POST',
+        const response = await fetch("/api/permissions", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ email }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to check permissions');
+          throw new Error("Failed to check permissions");
         }
 
         const result = await response.json();
         setPermissions(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setError(err instanceof Error ? err.message : "Unknown error");
         setPermissions({
           isAllowed: false,
           canEdit: false,
