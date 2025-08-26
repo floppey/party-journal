@@ -1,11 +1,15 @@
-// Static export compatible note page
+// Dynamic note page with Vercel support
 import NoteEditorClient from "@/components/NoteEditorClient";
 
-// For static export, we generate a limited set of static pages
-// All dynamic note access happens client-side through the notes list
+// Enable dynamic parameters for any noteId
+export const dynamicParams = true;
+
+// Optional: Pre-generate some common paths at build time
 export async function generateStaticParams() {
+  // You can return an empty array or pre-generate some paths
+  // Vercel will handle any dynamic noteId at runtime
   return [
-    { noteId: "new" }, // For creating new notes
+    { noteId: "new" }, // Pre-generate the "new" page
   ];
 }
 
