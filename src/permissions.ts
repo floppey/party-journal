@@ -3,21 +3,47 @@
 
 export type UserRole = "admin" | "editor" | "viewer";
 
-// Configure allowed users here - in production, move to environment or database
-const ALLOWED_USERS: Record<string, { email: string; role: UserRole }> = {
-  // TODO: Add your email and trusted users here
-  // Example:
-  // "your-email@gmail.com": { email: "your-email@gmail.com", role: "admin" },
-  // "friend@example.com": { email: "friend@example.com", role: "editor" },
-  // "viewer@example.com": { email: "viewer@example.com", role: "viewer" },
+// Load allowed users from environment variables
+function loadAllowedUsers(): Record<string, { email: string; role: UserRole }> {
+  const allowedUsers: Record<string, { email: string; role: UserRole }> = {};
 
-  // IMPORTANT: Add at least one admin user before deploying!
-  // Replace this example with your actual email:
-  "thin.ring7065@fastmail.com": {
-    email: "thin.ring7065@fastmail.com",
-    role: "admin",
-  },
-};
+  // Parse ALLOWED_USERS environment variable
+  // Format: "email1:role1,email2:role2,email3:role3"
+  const allowedUsersEnv = process.env.ALLOWED_USERS || "";
+
+  if (allowedUsersEnv) {
+    const userEntries = allowedUsersEnv.split(",");
+    for (const entry of userEntries) {
+      const [email, role] = entry.trim().split(":");
+      if (
+        email &&
+        role &&
+        (role === "admin" || role === "editor" || role === "viewer")
+      ) {
+        allowedUsers[email.toLowerCase()] = {
+          email: email.trim(),
+          role: role as UserRole,
+        };
+      }
+    }
+  }
+
+  // Fallback for development - add admin user from separate env var
+  const devAdminEmail = process.env.DEV_ADMIN_EMAIL;
+  if (devAdminEmail && Object.keys(allowedUsers).length === 0) {
+    console.warn(
+      "Using DEV_ADMIN_EMAIL for development. Set ALLOWED_USERS for production."
+    );
+    allowedUsers[devAdminEmail.toLowerCase()] = {
+      email: devAdminEmail,
+      role: "admin",
+    };
+  }
+
+  return allowedUsers;
+}
+
+const ALLOWED_USERS = loadAllowedUsers();
 
 export function isUserAllowed(email: string | null | undefined): boolean {
   if (!email) return false;

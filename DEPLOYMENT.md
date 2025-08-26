@@ -37,16 +37,20 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 2. Under **Source**, select **GitHub Actions**
 3. The workflow will automatically deploy when you push to main
 
-### 4. Update User Permissions
+### 4. Configure Environment Variables
 
-Before deploying, make sure to:
+Set up environment variables for GitHub Actions (for production deployment):
 
-1. Edit `src/permissions.ts`
-2. Replace the example admin email with your actual email:
-   ```typescript
-   const ALLOWED_USERS: Record<string, { email: string; role: UserRole }> = {
-     "your-email@gmail.com": { email: "your-email@gmail.com", role: "admin" },
-   };
+1. Go to your repository's **Settings** → **Secrets and variables** → **Actions**
+2. Add the following secrets:
+   ```
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ALLOWED_USERS=your-email@example.com:admin,friend@example.com:editor
    ```
 
 ### 5. Deploy
@@ -60,15 +64,20 @@ Before deploying, make sure to:
 For local development, create a `.env.local` file:
 
 ```bash
+# Firebase Configuration
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# User Access Control
+ALLOWED_USERS=your-email@example.com:admin,friend@example.com:editor
 ```
 
 Then run:
+
 ```bash
 npm install
 npm run dev
@@ -86,16 +95,19 @@ npm run deploy
 ## Troubleshooting
 
 ### Build Errors
+
 - Ensure all Firebase environment variables are set
 - Check that all dependencies are installed
 - Verify Next.js static export configuration
 
 ### Authentication Issues
+
 - Verify custom domain `journal.nat20.no` is in Firebase authorized domains
 - Check that Firebase configuration is correct
 - Ensure user emails are added to the permissions allowlist
 
 ### Deployment Failures
+
 - Check the Actions tab for build logs
 - Verify GitHub Pages is enabled in repository settings
 - Ensure all secrets are properly configured
