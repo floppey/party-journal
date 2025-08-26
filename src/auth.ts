@@ -11,10 +11,21 @@ import {
   signOut,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { canUserSignUp } from "./permissions";
 
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   const result = await signInWithPopup(auth, provider);
+
+  // Check if user is allowed to sign up
+  const email = result.user.email;
+  if (!canUserSignUp(email)) {
+    await signOut(auth);
+    throw new Error(
+      `Access denied. Your email (${email}) is not authorized to use this application.`
+    );
+  }
+
   await ensureProfile(result.user);
   return result.user;
 }
@@ -35,6 +46,13 @@ export async function sendEmailLink(email: string) {
 
 export async function completeEmailLinkSignIn(email: string) {
   if (isSignInWithEmailLink(auth, window.location.href)) {
+    // Check if user is allowed to sign up before completing sign-in
+    if (!canUserSignUp(email)) {
+      throw new Error(
+        `Access denied. Your email (${email}) is not authorized to use this application.`
+      );
+    }
+
     const result = await signInWithEmailLink(auth, email, window.location.href);
     await ensureProfile(result.user);
     try {
@@ -45,11 +63,11 @@ export async function completeEmailLinkSignIn(email: string) {
   throw new Error("Not an email sign-in link");
 }
 
-// Try to complete email link sign-in using stored email; returns a status
 export async function completeEmailLinkIfPresent(): Promise<
   | { status: "no-link" }
   | { status: "need-email" }
   | { status: "signed-in"; user: User }
+  | { status: "access-denied"; email: string }
 > {
   if (!isSignInWithEmailLink(auth, window.location.href))
     return { status: "no-link" };
@@ -58,6 +76,15 @@ export async function completeEmailLinkIfPresent(): Promise<
     email = window.localStorage.getItem("emailForSignIn");
   } catch {}
   if (!email) return { status: "need-email" };
+
+  // Check if user is allowed before completing sign-in
+  if (!canUserSignUp(email)) {
+    try {
+      window.localStorage.removeItem("emailForSignIn");
+    } catch {}
+    return { status: "access-denied", email };
+  }
+
   const result = await signInWithEmailLink(auth, email, window.location.href);
   await ensureProfile(result.user);
   try {

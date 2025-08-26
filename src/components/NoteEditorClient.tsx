@@ -53,10 +53,11 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
     const unsub = subscribeBlocks(noteId, (b) => {
       blocksRef.current = b;
       const joined = b.map((x) => x.text).join("\n");
-      
+
       // Always update on initial load, then preserve cursor during subsequent updates
-      const isInitialLoad = !noteLoadedRef.current || editorTextRef.current === "";
-      
+      const isInitialLoad =
+        !noteLoadedRef.current || editorTextRef.current === "";
+
       if (isInitialLoad) {
         // Initial load - always update
         editorTextRef.current = joined;
@@ -65,12 +66,12 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         // Subsequent updates - preserve cursor position when updating text
         const preserveCursor = () => {
           const textarea = textareaRef.current;
-          
+
           // Only update if not actively typing AND text actually changed
           if (!typingRef.current && joined !== editorTextRef.current) {
             editorTextRef.current = joined;
             setEditorText(joined);
-            
+
             // Restore cursor position after React re-renders
             if (textarea) {
               const start = textarea.selectionStart;
@@ -86,7 +87,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
             }
           }
         };
-        
+
         preserveCursor();
       }
     });
@@ -98,7 +99,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       if (!noteId) return;
-      
+
       // Capture current state before async operation
       const currentText = editorTextRef.current;
       const lines = currentText.split("\n");
@@ -136,7 +137,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         // On error, don't reset typing flag to prevent remote overwrite
         return;
       }
-      
+
       // Only reset typing flag if the text hasn't changed during the save
       if (editorTextRef.current === currentText) {
         // Still give a small delay to ensure all keystrokes are captured
@@ -154,7 +155,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
       const url = new URL(window.location.href);
       if (url.searchParams.get("dev") === "1") return true;
     }
-    return !!user && !!note ? canEdit(note, user.uid) : false;
+    return !!user && !!note ? canEdit(note, user.uid, user.email) : false;
   }, [user, note]);
   const markdown = editorText;
 

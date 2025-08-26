@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createNote } from "../../../notes";
 import { useAuth } from "../../../auth";
+import { canUserEdit } from "../../../permissions";
 
 export default function NewNotePage() {
   const [title, setTitle] = useState("");
@@ -17,6 +18,8 @@ export default function NewNotePage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/signin");
+    } else if (user && !canUserEdit(user.email)) {
+      setError("You don't have permission to create notes.");
     }
   }, [authLoading, user, router]);
 

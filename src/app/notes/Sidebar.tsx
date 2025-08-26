@@ -8,6 +8,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { createNoteWithBlock, updateNote } from "../../notes";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth";
+import { canUserEdit } from "../../permissions";
 
 type UINote = Note & { id: string; parentId?: string | null };
 type TreeNode = { id: string; note: UINote; children: TreeNode[] };
@@ -172,6 +173,13 @@ export default function Sidebar() {
   const handleAddSubNote = useCallback(
     async (parentId: string) => {
       if (!user) return;
+
+      // Check if user has edit permissions
+      if (!canUserEdit(user.email)) {
+        alert("You don't have permission to create notes.");
+        return;
+      }
+
       const newId = await createNoteWithBlock(
         {
           title: "Untitled",

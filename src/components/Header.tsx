@@ -4,6 +4,7 @@ import { useAuth, logout } from "../auth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createNoteWithBlock } from "../notes";
+import { canUserEdit, isAdmin } from "../permissions";
 
 export default function Header() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export default function Header() {
           <span>Party Journal</span>
         </Link>
         <div className="flex items-center gap-3">
-          {user && (
+          {user && canUserEdit(user.email) && (
             <button
               onClick={async () => {
                 if (creating) return;
@@ -60,6 +61,18 @@ export default function Header() {
           )}
           {user ? (
             <>
+              {isAdmin(user.email) && (
+                <Link
+                  href="/admin"
+                  className="text-sm px-3 py-1 rounded"
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  Admin
+                </Link>
+              )}
               {user.photoURL && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
