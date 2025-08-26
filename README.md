@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Party Journal
+
+A collaborative TTRPG campaign journal built with Next.js, Firebase, and real-time editing capabilities.
+
+## Features
+
+- **Real-time collaborative editing**: Multiple users can edit notes simultaneously
+- **Markdown support**: Full GFM support with syntax highlighting
+- **Wiki-style linking**: Use `[[Note Title]]` to link between notes
+- **Hierarchical notes**: Organize notes in folders and sub-notes
+- **Admonitions**: Support for styled callout boxes (info, warning, danger, etc.)
+- **Role-based access control**: Admin/Editor/Viewer roles with permission management
+- **Drag & drop**: Reorganize notes via drag and drop in the sidebar
+
+## Syntax Examples
+
+### Wiki Links
+```markdown
+Link to another note: [[Campaign Overview]]
+Create new note: [[New Character Name]]
+```
+
+### Admonitions
+```markdown
+:::info Player Information
+This is important information for players.
+:::
+
+:::warning DM Only
+Secret information that only the DM should know.
+:::
+
+:::danger Spoiler Alert
+Major plot spoilers ahead!
+:::
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+ 
+- Firebase project with Authentication and Firestore enabled
 
+### Setup
+
+1. **Clone and install dependencies**:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/party-journal.git
+cd party-journal
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Configure Firebase**:
+   - Copy `.env.example` to `.env.local`
+   - Fill in your Firebase configuration values
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Set up user permissions**:
+   - Edit `src/permissions.ts`
+   - Add your email as an admin user
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Run development server**:
+```bash
+npm run dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This app is configured for deployment to GitHub Pages. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Quick Deploy to GitHub Pages
 
-## Deploy on Vercel
+1. Push your code to a GitHub repository
+2. Set up Firebase environment variables in GitHub Secrets
+3. Enable GitHub Pages with GitHub Actions source
+4. Push to main branch to trigger automatic deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Your app will be available at: `https://journal.nat20.no/`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## User Management
+
+Access is controlled via a simple allowlist in `src/permissions.ts`. Three roles are supported:
+
+- **Admin**: Full access + user management
+- **Editor**: Can create, read, and edit notes  
+- **Viewer**: Read-only access
+
+To add users, edit the `ALLOWED_USERS` object or use the admin panel at `/admin`.
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Firebase Authentication + Firestore
+- **Markdown**: ReactMarkdown with GFM and syntax highlighting
+- **Real-time**: Firestore real-time subscriptions
+- **Deployment**: GitHub Pages with static export
+
+## License
+
+MIT License - see LICENSE file for details.
