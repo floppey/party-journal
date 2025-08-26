@@ -39,22 +39,22 @@ jobs:
         run: |
           echo "Building Next.js application..."
           npm run build
-          echo "Build completed. Checking for output directories..."
-          echo "Current directory contents:"
+          echo "Build completed. Listing all files and directories:"
           ls -la
-          echo "Checking for out directory:"
+          echo ""
+          echo "Looking for static output files:"
+          find . -name "*.html" -o -name "index.*" | head -20
+          echo ""
           if [ -d "out" ]; then
-            echo "✓ out directory found"
+            echo "✓ out directory found, contents:"
             ls -la out/
           else
             echo "✗ out directory not found"
           fi
-          echo "Checking for .next directory:"
           if [ -d ".next" ]; then
-            echo "✓ .next directory found"
+            echo ""
+            echo ".next directory contents:"
             ls -la .next/
-          else
-            echo "✗ .next directory not found"
           fi
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
