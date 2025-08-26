@@ -1,9 +1,12 @@
-// Server component wrapper for the client editor
+// Static export compatible note page
 import NoteEditorClient from "@/components/NoteEditorClient";
 
-// Generate static params for build - provide dummy entry for static export
+// For static export, we generate a limited set of static pages
+// All dynamic note access happens client-side through the notes list
 export async function generateStaticParams() {
-  return [{ noteId: "new" }];
+  return [
+    { noteId: "new" }, // For creating new notes
+  ];
 }
 
 export default async function NotePage({
@@ -12,5 +15,6 @@ export default async function NotePage({
   params: Promise<{ noteId: string }>;
 }) {
   const { noteId } = await params;
+
   return <NoteEditorClient noteId={noteId} />;
 }
