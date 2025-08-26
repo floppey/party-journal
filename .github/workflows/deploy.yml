@@ -36,7 +36,18 @@ jobs:
           static_site_generator: next
 
       - name: Build with Next.js
-        run: npm run build
+        run: |
+          echo "Building Next.js application..."
+          npm run build
+          echo "Build completed. Checking for out directory..."
+          if [ ! -d "out" ]; then
+            echo "out directory not found, running explicit export..."
+            npx next build
+            if [ ! -d "out" ]; then
+              echo "Creating export manually..."
+              npx next export
+            fi
+          fi
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
