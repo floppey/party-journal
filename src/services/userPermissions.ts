@@ -33,7 +33,10 @@ export interface UserPermissionData {
 }
 
 // In-memory cache for permissions to reduce Firebase calls
-const permissionsCache = new Map<string, { data: UserPermissionData; timestamp: number }>();
+const permissionsCache = new Map<
+  string,
+  { data: UserPermissionData; timestamp: number }
+>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Collection reference
@@ -56,7 +59,7 @@ export async function getUserPermissionsFromFirebase(
 
   const cacheKey = email.toLowerCase();
   const cached = permissionsCache.get(cacheKey);
-  
+
   // Return cached data if still valid
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.data;
@@ -106,11 +109,11 @@ export async function setUserPermissionsInFirebase(
   try {
     const docId = emailToDocId(email);
     const docRef = doc(db, USER_PERMISSIONS_COLLECTION, docId);
-    
+
     // Check if document exists to determine if this is an update
     const existingDoc = await getDoc(docRef);
     const now = serverTimestamp();
-    
+
     const data: Record<string, unknown> = {
       email: email.toLowerCase(),
       role,
@@ -144,7 +147,7 @@ export async function removeUserPermissionsFromFirebase(
   try {
     const docId = emailToDocId(email);
     const docRef = doc(db, USER_PERMISSIONS_COLLECTION, docId);
-    
+
     await deleteDoc(docRef);
 
     // Invalidate cache
@@ -160,12 +163,20 @@ export async function removeUserPermissionsFromFirebase(
 /**
  * Get all users with permissions from Firebase
  */
-export async function getAllUserPermissionsFromFirebase(): Promise<UserPermissionData[]> {
+export async function getAllUserPermissionsFromFirebase(): Promise<
+  UserPermissionData[]
+> {
   try {
     console.log("Attempting to fetch all user permissions from Firebase...");
-    console.log("Current auth user:", auth.currentUser?.email || "No user authenticated");
-    console.log("Auth state:", auth.currentUser ? "Authenticated" : "Not authenticated");
-    
+    console.log(
+      "Current auth user:",
+      auth.currentUser?.email || "No user authenticated"
+    );
+    console.log(
+      "Auth state:",
+      auth.currentUser ? "Authenticated" : "Not authenticated"
+    );
+
     const collectionRef = collection(db, USER_PERMISSIONS_COLLECTION);
     const q = query(collectionRef, orderBy("email"));
     const querySnapshot = await getDocs(q);
@@ -186,7 +197,10 @@ export async function getAllUserPermissionsFromFirebase(): Promise<UserPermissio
     return users;
   } catch (error) {
     console.error("Error fetching all user permissions from Firebase:", error);
-    console.error("Auth user when error occurred:", auth.currentUser?.email || "No user");
+    console.error(
+      "Auth user when error occurred:",
+      auth.currentUser?.email || "No user"
+    );
     return [];
   }
 }
@@ -209,7 +223,10 @@ export function clearPermissionsCache(): void {
 /**
  * Get cache stats (for debugging)
  */
-export function getPermissionsCacheStats(): { size: number; entries: string[] } {
+export function getPermissionsCacheStats(): {
+  size: number;
+  entries: string[];
+} {
   return {
     size: permissionsCache.size,
     entries: Array.from(permissionsCache.keys()),

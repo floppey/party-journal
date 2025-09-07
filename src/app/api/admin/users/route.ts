@@ -17,30 +17,40 @@ interface UserPermissionData {
 async function getAllUsersFromFirestore(): Promise<UserPermissionData[]> {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/userPermissions`;
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Firestore API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     const users: UserPermissionData[] = [];
-    
+
     if (data.documents) {
-      data.documents.forEach((doc: { name: string; fields: Record<string, { stringValue?: string; timestampValue?: string }> }) => {
-        const fields = doc.fields;
-        if (fields.email?.stringValue && fields.role?.stringValue) {
-          users.push({
-            email: fields.email.stringValue,
-            role: fields.role.stringValue as UserRole,
-            createdAt: fields.createdAt?.timestampValue || new Date().toISOString(),
-            updatedAt: fields.updatedAt?.timestampValue || new Date().toISOString(),
-            createdBy: fields.createdBy?.stringValue || 'system',
-          });
+      data.documents.forEach(
+        (doc: {
+          name: string;
+          fields: Record<
+            string,
+            { stringValue?: string; timestampValue?: string }
+          >;
+        }) => {
+          const fields = doc.fields;
+          if (fields.email?.stringValue && fields.role?.stringValue) {
+            users.push({
+              email: fields.email.stringValue,
+              role: fields.role.stringValue as UserRole,
+              createdAt:
+                fields.createdAt?.timestampValue || new Date().toISOString(),
+              updatedAt:
+                fields.updatedAt?.timestampValue || new Date().toISOString(),
+              createdBy: fields.createdBy?.stringValue || "system",
+            });
+          }
         }
-      });
+      );
     }
-    
+
     return users.sort((a, b) => a.email.localeCompare(b.email));
   } catch (error) {
     console.error("Error getting users from Firestore:", error);
@@ -48,15 +58,17 @@ async function getAllUsersFromFirestore(): Promise<UserPermissionData[]> {
   }
 }
 
-async function setUserInFirestore(userData: UserPermissionData): Promise<boolean> {
+async function setUserInFirestore(
+  userData: UserPermissionData
+): Promise<boolean> {
   try {
     const docId = userData.email.toLowerCase().replace(/[.#$[\]]/g, "_");
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/userPermissions/${docId}`;
-    
+
     const response = await fetch(url, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         fields: {
@@ -65,10 +77,10 @@ async function setUserInFirestore(userData: UserPermissionData): Promise<boolean
           createdAt: { timestampValue: userData.createdAt },
           updatedAt: { timestampValue: new Date().toISOString() },
           createdBy: { stringValue: userData.createdBy },
-        }
+        },
       }),
     });
-    
+
     return response.ok;
   } catch (error) {
     console.error("Error setting user in Firestore:", error);
@@ -80,11 +92,11 @@ async function deleteUserFromFirestore(email: string): Promise<boolean> {
   try {
     const docId = email.toLowerCase().replace(/[.#$[\]]/g, "_");
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/userPermissions/${docId}`;
-    
+
     const response = await fetch(url, {
-      method: 'DELETE',
+      method: "DELETE",
     });
-    
+
     return response.ok;
   } catch (error) {
     console.error("Error deleting user from Firestore:", error);
@@ -101,7 +113,7 @@ async function verifyAdmin(): Promise<string | null> {
       console.log("Using dev admin fallback:", devAdminEmail);
       return devAdminEmail;
     }
-    
+
     // TODO: Implement proper Firebase Auth token verification
     return null;
   } catch (error) {
@@ -114,15 +126,18 @@ async function verifyAdmin(): Promise<string | null> {
 export async function GET() {
   try {
     console.log("GET /api/admin/users - Getting all user permissions");
-    
+
     const adminEmail = await verifyAdmin();
     if (!adminEmail) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
     }
 
     const users = await getAllUsersFromFirestore();
     console.log(`Retrieved ${users.length} users`);
-    
+
     return NextResponse.json({ users });
   } catch (error) {
     console.error("Error in GET /api/admin/users:", error);
@@ -137,14 +152,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     console.log("POST /api/admin/users - Adding/updating user permissions");
-    
+
     const adminEmail = await verifyAdmin();
     if (!adminEmail) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
     }
 
     const { email, role } = await request.json();
-    
+
     if (!email || !role) {
       return NextResponse.json(
         { error: "Email and role are required" },
@@ -161,7 +179,7 @@ export async function POST(request: NextRequest) {
     };
 
     const success = await setUserInFirestore(userData);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: "Failed to set user permissions" },
@@ -184,23 +202,23 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     console.log("DELETE /api/admin/users - Removing user permissions");
-    
+
     const adminEmail = await verifyAdmin();
     if (!adminEmail) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
-
-    const { email } = await request.json();
-    
-    if (!email) {
       return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
+        { error: "Admin access required" },
+        { status: 403 }
       );
     }
 
+    const { email } = await request.json();
+
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
     const success = await deleteUserFromFirestore(email);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: "Failed to remove user permissions" },

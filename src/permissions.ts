@@ -8,7 +8,9 @@ export type UserRole = "admin" | "editor" | "viewer";
 /**
  * Get user role from Firebase
  */
-export async function getUserRole(email: string | null | undefined): Promise<UserRole | null> {
+export async function getUserRole(
+  email: string | null | undefined
+): Promise<UserRole | null> {
   if (!email) return null;
 
   try {
@@ -23,7 +25,9 @@ export async function getUserRole(email: string | null | undefined): Promise<Use
 /**
  * Check if user is allowed (has any role)
  */
-export async function isUserAllowed(email: string | null | undefined): Promise<boolean> {
+export async function isUserAllowed(
+  email: string | null | undefined
+): Promise<boolean> {
   const role = await getUserRole(email);
   return role !== null;
 }
@@ -31,14 +35,18 @@ export async function isUserAllowed(email: string | null | undefined): Promise<b
 /**
  * Check if user can sign up
  */
-export async function canUserSignUp(email: string | null | undefined): Promise<boolean> {
+export async function canUserSignUp(
+  email: string | null | undefined
+): Promise<boolean> {
   return await isUserAllowed(email);
 }
 
 /**
  * Check if user can edit content
  */
-export async function canUserEdit(userEmail: string | null | undefined): Promise<boolean> {
+export async function canUserEdit(
+  userEmail: string | null | undefined
+): Promise<boolean> {
   const role = await getUserRole(userEmail);
   return role === "admin" || role === "editor";
 }
@@ -46,7 +54,9 @@ export async function canUserEdit(userEmail: string | null | undefined): Promise
 /**
  * Check if user can read content
  */
-export async function canUserRead(userEmail: string | null | undefined): Promise<boolean> {
+export async function canUserRead(
+  userEmail: string | null | undefined
+): Promise<boolean> {
   const role = await getUserRole(userEmail);
   return role === "admin" || role === "editor" || role === "viewer";
 }
@@ -54,7 +64,9 @@ export async function canUserRead(userEmail: string | null | undefined): Promise
 /**
  * Check if user is admin
  */
-export async function isAdmin(userEmail: string | null | undefined): Promise<boolean> {
+export async function isAdmin(
+  userEmail: string | null | undefined
+): Promise<boolean> {
   const role = await getUserRole(userEmail);
   return role === "admin";
 }

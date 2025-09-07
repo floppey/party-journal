@@ -48,7 +48,10 @@ export async function getUserPermissionsFromFirebaseAdmin(
       createdBy: data.createdBy,
     };
   } catch (error) {
-    console.error("Error fetching user permissions from Firebase Admin:", error);
+    console.error(
+      "Error fetching user permissions from Firebase Admin:",
+      error
+    );
     return null;
   }
 }
@@ -64,10 +67,10 @@ export async function setUserPermissionsInFirebaseAdmin(
   try {
     const docId = emailToDocId(email);
     const docRef = adminDb.collection(USER_PERMISSIONS_COLLECTION).doc(docId);
-    
+
     // Check if document exists to determine if this is an update
     const existingDoc = await docRef.get();
-    
+
     const data: Record<string, unknown> = {
       email: email.toLowerCase(),
       role,
@@ -97,11 +100,14 @@ export async function removeUserPermissionsFromFirebaseAdmin(
   try {
     const docId = emailToDocId(email);
     const docRef = adminDb.collection(USER_PERMISSIONS_COLLECTION).doc(docId);
-    
+
     await docRef.delete();
     return true;
   } catch (error) {
-    console.error("Error removing user permissions from Firebase Admin:", error);
+    console.error(
+      "Error removing user permissions from Firebase Admin:",
+      error
+    );
     return false;
   }
 }
@@ -109,10 +115,14 @@ export async function removeUserPermissionsFromFirebaseAdmin(
 /**
  * Get all users with permissions from Firebase Admin (server-side)
  */
-export async function getAllUserPermissionsFromFirebaseAdmin(): Promise<UserPermissionData[]> {
+export async function getAllUserPermissionsFromFirebaseAdmin(): Promise<
+  UserPermissionData[]
+> {
   try {
-    console.log("Attempting to fetch all user permissions from Firebase Admin...");
-    
+    console.log(
+      "Attempting to fetch all user permissions from Firebase Admin..."
+    );
+
     const collectionRef = adminDb.collection(USER_PERMISSIONS_COLLECTION);
     const querySnapshot = await collectionRef.orderBy("email").get();
 
@@ -128,10 +138,15 @@ export async function getAllUserPermissionsFromFirebaseAdmin(): Promise<UserPerm
       });
     });
 
-    console.log(`Successfully fetched ${users.length} users from Firebase Admin`);
+    console.log(
+      `Successfully fetched ${users.length} users from Firebase Admin`
+    );
     return users;
   } catch (error) {
-    console.error("Error fetching all user permissions from Firebase Admin:", error);
+    console.error(
+      "Error fetching all user permissions from Firebase Admin:",
+      error
+    );
     return [];
   }
 }
@@ -139,7 +154,9 @@ export async function getAllUserPermissionsFromFirebaseAdmin(): Promise<UserPerm
 /**
  * Check if a user has admin role using Firebase Admin (server-side)
  */
-export async function isUserAdminInFirebaseAdmin(email: string): Promise<boolean> {
+export async function isUserAdminInFirebaseAdmin(
+  email: string
+): Promise<boolean> {
   const permissions = await getUserPermissionsFromFirebaseAdmin(email);
   return permissions?.role === "admin" || false;
 }

@@ -13,8 +13,11 @@ if (getApps().length === 0) {
     adminApp = initializeApp({
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     });
-    
-    console.log("Firebase Admin initialized with project ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+
+    console.log(
+      "Firebase Admin initialized with project ID:",
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    );
   } catch (error) {
     console.error("Error initializing Firebase Admin:", error);
     throw error;

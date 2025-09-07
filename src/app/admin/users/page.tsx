@@ -16,15 +16,15 @@ interface User {
 export default function AdminUsersPage() {
   const { user } = useAuth();
   const { isAdmin, loading: permissionsLoading } = usePermissions(user?.email);
-  
+
   // Fallback for dev admin during bootstrapping
   const isDevAdmin = user?.email === "thin.ring7065@fastmail.com";
   const isActualAdmin = isAdmin || isDevAdmin;
-  
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Add user form state
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserRole, setNewUserRole] = useState<UserRole>("viewer");
@@ -33,14 +33,14 @@ export default function AdminUsersPage() {
   // Fetch users
   const fetchUsers = useCallback(async () => {
     if (!user?.email || !isActualAdmin) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch("/api/admin/users", {
         headers: {
-          "Authorization": `Bearer ${user.email}`,
+          Authorization: `Bearer ${user.email}`,
         },
       });
 
@@ -60,17 +60,17 @@ export default function AdminUsersPage() {
   // Add or update user
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newUserEmail.trim() || !user?.email) return;
-    
+
     setIsAddingUser(true);
     setError(null);
-    
+
     try {
       const response = await fetch("/api/admin/users", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${user.email}`,
+          Authorization: `Bearer ${user.email}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -98,14 +98,14 @@ export default function AdminUsersPage() {
   // Remove user
   const handleRemoveUser = async (email: string) => {
     if (!user?.email || !confirm(`Remove access for ${email}?`)) return;
-    
+
     try {
       setError(null);
-      
+
       const response = await fetch("/api/admin/users", {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${user.email}`,
+          Authorization: `Bearer ${user.email}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
@@ -125,14 +125,14 @@ export default function AdminUsersPage() {
   // Update user role
   const handleUpdateRole = async (email: string, newRole: UserRole) => {
     if (!user?.email) return;
-    
+
     try {
       setError(null);
-      
+
       const response = await fetch("/api/admin/users", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${user.email}`,
+          Authorization: `Bearer ${user.email}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -180,16 +180,19 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl" style={{ color: "var(--foreground)" }}>
+    <div
+      className="container mx-auto px-4 py-8 max-w-6xl"
+      style={{ color: "var(--foreground)" }}
+    >
       <h1 className="text-3xl font-bold mb-8">User Management</h1>
 
       {error && (
-        <div 
+        <div
           className="border px-4 py-3 rounded mb-6"
-          style={{ 
-            backgroundColor: "var(--error-bg)", 
-            borderColor: "var(--error-border)", 
-            color: "var(--error-text)" 
+          style={{
+            backgroundColor: "var(--error-bg)",
+            borderColor: "var(--error-border)",
+            color: "var(--error-text)",
           }}
         >
           {error}
@@ -197,11 +200,11 @@ export default function AdminUsersPage() {
       )}
 
       {/* Add User Form */}
-      <div 
-        className="border rounded-lg p-6 mb-8" 
-        style={{ 
-          backgroundColor: "var(--surface)", 
-          borderColor: "var(--border)" 
+      <div
+        className="border rounded-lg p-6 mb-8"
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border)",
         }}
       >
         <h2 className="text-xl font-semibold mb-4">Add User</h2>
@@ -216,10 +219,10 @@ export default function AdminUsersPage() {
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
-              style={{ 
+              style={{
                 borderColor: "var(--border)",
                 backgroundColor: "var(--surface)",
-                color: "var(--foreground)"
+                color: "var(--foreground)",
               }}
               placeholder="user@example.com"
               required
@@ -234,10 +237,10 @@ export default function AdminUsersPage() {
               value={newUserRole}
               onChange={(e) => setNewUserRole(e.target.value as UserRole)}
               className="px-3 py-2 border rounded-md"
-              style={{ 
+              style={{
                 borderColor: "var(--border)",
                 backgroundColor: "var(--surface)",
-                color: "var(--foreground)"
+                color: "var(--foreground)",
               }}
             >
               <option value="viewer">Viewer</option>
@@ -257,15 +260,15 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users List */}
-      <div 
-        className="border rounded-lg" 
-        style={{ 
-          backgroundColor: "var(--surface)", 
-          borderColor: "var(--border)" 
+      <div
+        className="border rounded-lg"
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border)",
         }}
       >
-        <div 
-          className="px-6 py-4 border-b" 
+        <div
+          className="px-6 py-4 border-b"
           style={{ borderColor: "var(--border)" }}
         >
           <h2 className="text-xl font-semibold">Users ({users.length})</h2>
@@ -274,29 +277,49 @@ export default function AdminUsersPage() {
         {loading ? (
           <div className="p-6 text-center">Loading users...</div>
         ) : users.length === 0 ? (
-          <div className="p-6 text-center" style={{ opacity: 0.7 }}>No users found</div>
+          <div className="p-6 text-center" style={{ opacity: 0.7 }}>
+            No users found
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead style={{ backgroundColor: "var(--surface-secondary)" }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ opacity: 0.7 }}>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ opacity: 0.7 }}
+                  >
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ opacity: 0.7 }}>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ opacity: 0.7 }}
+                  >
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ opacity: 0.7 }}>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ opacity: 0.7 }}
+                  >
                     Added
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ opacity: 0.7 }}>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ opacity: 0.7 }}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
+              <tbody
+                className="divide-y"
+                style={{ borderColor: "var(--border)" }}
+              >
                 {users.map((userItem) => (
-                  <tr key={userItem.email} style={{ borderColor: "var(--border)" }}>
+                  <tr
+                    key={userItem.email}
+                    style={{ borderColor: "var(--border)" }}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium">
                         {userItem.email}
@@ -306,13 +329,16 @@ export default function AdminUsersPage() {
                       <select
                         value={userItem.role}
                         onChange={(e) =>
-                          handleUpdateRole(userItem.email, e.target.value as UserRole)
+                          handleUpdateRole(
+                            userItem.email,
+                            e.target.value as UserRole
+                          )
                         }
                         className="text-sm border rounded px-2 py-1"
-                        style={{ 
+                        style={{
                           borderColor: "var(--border)",
                           backgroundColor: "var(--surface)",
-                          color: "var(--foreground)"
+                          color: "var(--foreground)",
                         }}
                       >
                         <option value="viewer">Viewer</option>
@@ -320,7 +346,10 @@ export default function AdminUsersPage() {
                         <option value="admin">Admin</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ opacity: 0.7 }}>
+                    <td
+                      className="px-6 py-4 whitespace-nowrap text-sm"
+                      style={{ opacity: 0.7 }}
+                    >
                       {new Date(userItem.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -328,12 +357,17 @@ export default function AdminUsersPage() {
                         onClick={() => handleRemoveUser(userItem.email)}
                         className="text-red-600 hover:text-red-700"
                         disabled={userItem.email === user?.email}
-                        style={{ 
+                        style={{
                           opacity: userItem.email === user?.email ? 0.5 : 1,
-                          cursor: userItem.email === user?.email ? "not-allowed" : "pointer"
+                          cursor:
+                            userItem.email === user?.email
+                              ? "not-allowed"
+                              : "pointer",
                         }}
                       >
-                        {userItem.email === user?.email ? "Cannot remove self" : "Remove"}
+                        {userItem.email === user?.email
+                          ? "Cannot remove self"
+                          : "Remove"}
                       </button>
                     </td>
                   </tr>
@@ -345,18 +379,27 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Role Descriptions */}
-      <div 
-        className="mt-8 border rounded-lg p-6" 
-        style={{ 
-          backgroundColor: "var(--surface-secondary)", 
-          borderColor: "var(--border)" 
+      <div
+        className="mt-8 border rounded-lg p-6"
+        style={{
+          backgroundColor: "var(--surface-secondary)",
+          borderColor: "var(--border)",
         }}
       >
         <h3 className="text-lg font-semibold mb-4">Role Descriptions</h3>
         <div className="space-y-2 text-sm">
-          <div><strong>Admin:</strong> Full access - can manage users, create/edit/delete all content</div>
-          <div><strong>Editor:</strong> Can create, edit, and delete content but cannot manage users</div>
-          <div><strong>Viewer:</strong> Can only view content, cannot create or edit</div>
+          <div>
+            <strong>Admin:</strong> Full access - can manage users,
+            create/edit/delete all content
+          </div>
+          <div>
+            <strong>Editor:</strong> Can create, edit, and delete content but
+            cannot manage users
+          </div>
+          <div>
+            <strong>Viewer:</strong> Can only view content, cannot create or
+            edit
+          </div>
         </div>
       </div>
     </div>
