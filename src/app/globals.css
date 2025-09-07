@@ -42,6 +42,17 @@ code {
   border-radius: 0.25rem;
 }
 
+.language-admo-danger,
+.language-admo-warning,
+.language-admo-note,
+.language-admo-info,
+.language-admo-tip,
+.language-admo-success,
+.language-admo-idea,
+.language-admo-question {
+  white-space: break-spaces;
+}
+
 .language-admo-danger {
   background: #611a15;
   color: #ffebe9;

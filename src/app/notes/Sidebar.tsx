@@ -46,6 +46,7 @@ function TreeView({
   onDragEnter,
   onDragLeave,
   dragOverId,
+  onClose,
 }: {
   nodes: TreeNode[];
   depth?: number;
@@ -56,6 +57,7 @@ function TreeView({
   onDragEnter: (e: React.DragEvent, node: TreeNode) => void;
   onDragLeave: (e: React.DragEvent, node: TreeNode) => void;
   dragOverId: string | null;
+  onClose?: () => void;
 }) {
   return (
     <ul>
@@ -84,6 +86,12 @@ function TreeView({
             <Link
               href={`/notes/${n.id}`}
               style={{ color: "var(--foreground)" }}
+              onClick={() => {
+                // Close sidebar on mobile when a note is selected
+                if (onClose && window.innerWidth < 1024) {
+                  onClose();
+                }
+              }}
             >
               {n.note.title || "(untitled)"}
             </Link>
@@ -99,6 +107,7 @@ function TreeView({
               onDragEnter={onDragEnter}
               onDragLeave={onDragLeave}
               dragOverId={dragOverId}
+              onClose={onClose}
             />
           )}
         </li>
@@ -107,7 +116,7 @@ function TreeView({
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const [notes, setNotes] = useState<UINote[]>([]);
   const [menu, setMenu] = useState<{
     x: number;
@@ -274,7 +283,7 @@ export default function Sidebar() {
       }}
     >
       <div
-        className="p-4 font-bold text-lg"
+        className="p-4 font-bold text-lg flex items-center justify-between"
         style={{
           borderBottom: "1px solid var(--border)",
           backgroundColor: dragOverRoot ? "rgba(37,99,235,0.12)" : undefined,
@@ -297,6 +306,7 @@ export default function Sidebar() {
           onDragEnter={onDragEnterNode}
           onDragLeave={onDragLeaveNode}
           dragOverId={dragOverId}
+          onClose={onClose}
         />
       </div>
       {menu && (

@@ -21,16 +21,17 @@ export default function Header() {
         borderBottom: "1px solid var(--border)",
       }}
     >
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+      <div className="mx-auto max-w-6xl px-2 sm:px-4 py-3 sm:py-3 flex items-center justify-between min-h-[56px] sm:min-h-0">
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold text-lg"
+          className="flex items-center gap-1 sm:gap-2 font-semibold text-base sm:text-lg"
           style={{ color: "var(--foreground)" }}
         >
-          <span>📝</span>
-          <span>Party Journal</span>
+          <span className="text-sm sm:text-base">📝</span>
+          <span className="hidden sm:inline">Party Journal</span>
+          <span className="sm:hidden">PJ</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           {user && canEdit && (
             <button
               onClick={async () => {
@@ -54,10 +55,13 @@ export default function Header() {
                 }
               }}
               disabled={creating}
-              className="text-sm px-3 py-1 rounded"
+              className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
               style={{ backgroundColor: "#2563eb", color: "#fff" }}
             >
-              {creating ? "Creating…" : "New note"}
+              <span className="hidden sm:inline">
+                {creating ? "Creating…" : "New note"}
+              </span>
+              <span className="sm:hidden">+</span>
             </button>
           )}
           {user ? (
@@ -65,13 +69,14 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="text-sm px-3 py-1 rounded"
+                  className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
                   style={{
                     backgroundColor: "transparent",
                     border: "1px solid var(--border)",
                   }}
                 >
-                  Admin
+                  <span className="hidden sm:inline">Admin</span>
+                  <span className="sm:hidden">⚙️</span>
                 </Link>
               )}
               {user.photoURL && (
@@ -79,31 +84,36 @@ export default function Header() {
                 <img
                   src={user.photoURL}
                   alt={user.displayName ?? "User"}
-                  className="h-8 w-8 rounded-full border"
+                  className="h-6 w-6 sm:h-8 sm:w-8 rounded-full border"
                   style={{ borderColor: "var(--border)" }}
                 />
               )}
-              <span className="text-sm" title={user.email ?? ""}>
+              <span
+                className="text-xs sm:text-sm hidden sm:inline truncate max-w-24 sm:max-w-none"
+                title={user.email ?? ""}
+              >
                 {user.displayName ?? user.email}
               </span>
               <button
                 onClick={() => logout()}
-                className="text-sm px-3 py-1 rounded"
+                className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
                 style={{
                   backgroundColor: "transparent",
                   border: "1px solid var(--border)",
                 }}
               >
-                Sign out
+                <span className="hidden sm:inline">Sign out</span>
+                <span className="sm:hidden">↗</span>
               </button>
             </>
           ) : (
             <Link
               href="/signin"
-              className="text-sm px-3 py-1 rounded"
+              className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
               style={{ backgroundColor: "#2563eb", color: "#fff" }}
             >
-              Sign in
+              <span className="hidden sm:inline">Sign in</span>
+              <span className="sm:hidden">↗</span>
             </Link>
           )}
         </div>
