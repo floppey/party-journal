@@ -16,7 +16,6 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { z } from "zod";
-import { UserRole } from "./permissions";
 
 export const NoteSchema = z.object({
   title: z.string(),
