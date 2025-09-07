@@ -16,7 +16,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { z } from "zod";
-import { canUserRead, canUserEdit } from "./permissions";
+import { UserRole } from "./permissions";
 
 export const NoteSchema = z.object({
   title: z.string(),
@@ -227,10 +227,12 @@ export function parseVisibility(
 export function canRead(
   note: Note,
   userId: string | null,
-  userEmail?: string | null
+  userRole?: string | null
 ): boolean {
-  // First check role-based permissions
-  if (!canUserRead(userEmail)) return false;
+  // Check if user has read permissions (admin, editor, or viewer)
+  if (!userRole || !["admin", "editor", "viewer"].includes(userRole)) {
+    return false;
+  }
 
   const vis = parseVisibility(note.visibility);
   if (note.createdBy === userId) return true;
@@ -251,11 +253,13 @@ export function canRead(
 export function canEdit(
   note: Note,
   userId: string | null,
-  userEmail?: string | null
+  userRole?: string | null
 ): boolean {
-  // First check role-based permissions
-  if (!canUserEdit(userEmail)) return false;
+  // Check if user has edit permissions (admin or editor only)
+  if (!userRole || !["admin", "editor"].includes(userRole)) {
+    return false;
+  }
 
   // Then check note-specific permissions (same as canRead for now)
-  return canRead(note, userId, userEmail);
+  return canRead(note, userId, userRole);
 }

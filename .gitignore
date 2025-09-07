@@ -43,3 +43,9 @@ next-env.d.ts
 # Playwright
 .playwright/
 .playwright-mcp/
+
+# Firebase
+firebase.json
+firestore.rules
+firestore.indexes.json
+.firebaserc

@@ -15,11 +15,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
+    // Use async permission functions
+    const [isAllowed, canEdit, isAdminUser, role] = await Promise.all([
+      isUserAllowed(email),
+      canUserEdit(email),
+      isAdmin(email),
+      getUserRole(email),
+    ]);
+
     const permissions = {
-      isAllowed: isUserAllowed(email),
-      canEdit: canUserEdit(email),
-      isAdmin: isAdmin(email),
-      role: getUserRole(email),
+      isAllowed,
+      canEdit,
+      isAdmin: isAdminUser,
+      role,
     };
 
     // If a specific action is requested, return just that

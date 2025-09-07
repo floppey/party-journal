@@ -4,8 +4,12 @@
   --background: #ffffff;
   --foreground: #171717;
   --surface: #ffffff; /* cards, panels */
+  --surface-secondary: #f9fafb; /* secondary surfaces like table headers */
   --border: #e5e7eb; /* borders */
   --muted: #6b7280; /* secondary text */
+  --error-bg: #fee2e2; /* red-100 */
+  --error-border: #fca5a5; /* red-300 */
+  --error-text: #dc2626; /* red-600 */
 }
 
 /* Removed Tailwind @theme mapping; using CSS variables directly for broader tooling compatibility */
@@ -15,8 +19,12 @@
     --background: #0a0a0a;
     --foreground: #ededed;
     --surface: #1f2937; /* gray-800 */
+    --surface-secondary: #374151; /* gray-700 */
     --border: #374151; /* gray-700 */
     --muted: #9ca3af; /* gray-400 */
+    --error-bg: #7f1d1d; /* red-900 */
+    --error-border: #dc2626; /* red-600 */
+    --error-text: #fca5a5; /* red-300 */
   }
 }
 
