@@ -18,19 +18,28 @@ import { usePermissions } from "../hooks/usePermissions";
 export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const [note, setNote] = useState<Note | null>(null);
   const { user, loading: authLoading } = useAuth();
-  const { canEdit: canUserEdit, loading: permissionsLoading } = usePermissions(user?.email);
+  const {
+    canEdit: canUserEdit,
+    isAdmin,
+    loading: permissionsLoading,
+  } = usePermissions(user?.email);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [editorText, setEditorText] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
   const [mode, setMode] = useState<"view" | "edit">("view");
   const typingRef = useRef(false);
+  const adminTypingRef = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adminSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorTextRef = useRef("");
+  const adminNotesRef = useRef("");
   const blocksRef = useRef<Block[]>([]);
   const titleTypingRef = useRef(false);
   const noteLoadedRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const adminTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Subscribe to note metadata (title, etc.)
   useEffect(() => {
@@ -44,9 +53,14 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
       if (n && !titleTypingRef.current) {
         setTitle(n.title ?? "");
       }
+      // Initialize admin notes if user is admin and not currently typing
+      if (n && !adminTypingRef.current && isAdmin) {
+        setAdminNotes(n.adminNotes ?? "");
+        adminNotesRef.current = n.adminNotes ?? "";
+      }
     });
     return () => unsub();
-  }, [noteId]);
+  }, [noteId, isAdmin]);
 
   // Subscribe to blocks for realtime updates
   useEffect(() => {
@@ -151,13 +165,25 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
     }, 300);
   };
 
+  // Admin notes save function
+  const scheduleAdminSave = () => {
+    if (adminSaveTimer.current) clearTimeout(adminSaveTimer.current);
+    adminSaveTimer.current = setTimeout(() => {
+      const currentAdminNotes = adminNotesRef.current;
+      if (currentAdminNotes !== (note?.adminNotes ?? "")) {
+        updateNote(noteId, { adminNotes: currentAdminNotes });
+      }
+    }, 300);
+  };
+
   const canCurrentUserEdit = useMemo(() => {
     // Use server-side permissions
     return canUserEdit;
   }, [canUserEdit]);
   const markdown = editorText;
 
-  if (loading || authLoading || permissionsLoading) return <div>Loading...</div>;
+  if (loading || authLoading || permissionsLoading)
+    return <div>Loading...</div>;
   if (!note) return <div>Note not found.</div>;
 
   return (
@@ -272,6 +298,83 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
           <Markdown markdown={markdown} />
         </div>
       )}
+
+      {/* Admin Notes Section - Only visible to admins */}
+      {isAdmin && (mode === "edit" || adminNotes) && (
+        <div
+          className="mt-6 p-4 border rounded"
+          style={{
+            backgroundColor: "var(--surface)",
+            borderColor: "var(--border)",
+            borderLeft: "4px solid #dc2626",
+          }}
+        >
+          <h3 className="text-lg font-semibold mb-2 text-red-600 dark:text-red-400">
+            🔒 DM Notes
+          </h3>
+          <p className="text-sm mb-3 opacity-75">
+            This section is only visible to administrators and will not appear
+            to regular users.
+          </p>
+
+          {mode === "edit" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <textarea
+                ref={adminTextareaRef}
+                value={adminNotes}
+                onChange={(e) => {
+                  adminTypingRef.current = true;
+                  const val = e.target.value;
+                  adminNotesRef.current = val;
+                  setAdminNotes(val);
+                  scheduleAdminSave();
+                }}
+                onFocus={() => {
+                  adminTypingRef.current = true;
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    adminTypingRef.current = false;
+                  }, 100);
+                }}
+                rows={8}
+                className="w-full p-3 border rounded font-mono text-sm"
+                style={{
+                  backgroundColor: "var(--background)",
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  lineHeight: "1.5",
+                }}
+                placeholder="Admin-only notes (markdown supported)..."
+              />
+              <div
+                className="w-full p-3 border rounded overflow-auto prose dark:prose-invert"
+                style={{
+                  backgroundColor: "var(--background)",
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  lineHeight: "1.6",
+                }}
+              >
+                <Markdown markdown={adminNotes} />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-full p-3 border rounded overflow-auto prose dark:prose-invert"
+              style={{
+                backgroundColor: "var(--background)",
+                color: "var(--foreground)",
+                borderColor: "var(--border)",
+                lineHeight: "1.6",
+              }}
+            >
+              <Markdown markdown={adminNotes} />
+            </div>
+          )}
+        </div>
+      )}
+
       {note.tags && (
         <div className="mb-2" style={{ color: "var(--foreground)" }}>
           <span className="font-semibold">Tags:</span> {note.tags.join(", ")}

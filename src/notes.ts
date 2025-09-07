@@ -22,6 +22,7 @@ export const NoteSchema = z.object({
   title: z.string(),
   titleLower: z.string().optional(),
   content: z.string(),
+  adminNotes: z.string().optional(), // Admin-only section
   createdBy: z.string(),
   createdAt: z.instanceof(Timestamp).optional(),
   updatedAt: z.instanceof(Timestamp).optional(),

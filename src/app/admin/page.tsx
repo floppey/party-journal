@@ -1,5 +1,6 @@
 // src/app/admin/page.tsx
 "use client";
+import Link from "next/link";
 import { useAuth } from "../../auth";
 import { isAdmin } from "../../permissions";
 import { useState, useEffect } from "react";
@@ -23,42 +24,9 @@ export default function AdminPage() {
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">User Management</h2>
-        <p className="mb-4 text-gray-600">
-          To add users, edit the ALLOWED_USERS object in{" "}
-          <code>src/permissions.ts</code>
-        </p>
-
-        <button
-          onClick={() => {
-            setShowUsers(!showUsers);
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          {showUsers ? "Hide" : "Show"} Console Helper
-        </button>
-
-        {showUsers && (
-          <div className="mt-4 p-4 bg-gray-100 rounded">
-            <p className="mb-2 font-medium">Add users with console commands:</p>
-            <pre className="text-sm bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">
-              {`// Open browser console and run:
-import { addUserToAllowlist } from './src/permissions';
-
-// Add an admin user
-addUserToAllowlist("user@example.com", "admin");
-
-// Add an editor user
-addUserToAllowlist("user@example.com", "editor");
-
-// Add a viewer user
-addUserToAllowlist("user@example.com", "viewer");`}
-            </pre>
-            <p className="text-sm text-gray-600 mt-2">
-              Copy the output and add it to the ALLOWED_USERS object in
-              src/permissions.ts
-            </p>
-          </div>
-        )}
+        <Link href="/admin/users" className="text-blue-600 underline">
+          Manage Users
+        </Link>
       </div>
 
       <div className="mb-6">
