@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createNote } from "../../../notes";
 import { useAuth } from "../../../auth";
-import { usePermissions } from "../../../hooks/usePermissions";
+import { usePermissions } from "../../../hooks/usePermissionsCache";
 
 function NewNoteForm() {
   const [title, setTitle] = useState("");

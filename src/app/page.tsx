@@ -2,10 +2,9 @@
 import Link from "next/link";
 import { useAuth } from "../auth";
 import Sidebar from "./notes/Sidebar";
-import { useEffect, useState } from "react";
-import { db } from "../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
-import { usePermissions } from "../hooks/usePermissions";
+import { useState } from "react";
+import { usePermissions } from "../hooks/usePermissionsCache";
+import { useHasNotes } from "../hooks/useNotesCache";
 
 function UnauthenticatedLanding() {
   return (
@@ -40,22 +39,13 @@ function UnauthenticatedLanding() {
 }
 
 function AuthenticatedLanding() {
-  const [hasNotes, setHasNotes] = useState(false);
-  const { user } = useAuth();
-  const { isAllowed, loading: permissionsLoading } = usePermissions(
-    user?.email
-  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "notes"), (snap) => {
-      setHasNotes(snap.docs.length > 0);
-    });
-    return () => unsub();
-  }, []);
+  const { user } = useAuth();
+  const { isAllowed, loading: permissionsLoading } = usePermissions(user?.email);
+  const { hasNotes, loading: notesLoading } = useHasNotes();
 
   // Show loading state while checking permissions
-  if (permissionsLoading) {
+  if (permissionsLoading || notesLoading) {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"

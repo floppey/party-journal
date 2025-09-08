@@ -1,19 +1,16 @@
 // src/app/notes/Sidebar.tsx
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { Note } from "../../notes";
-import { db } from "../../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
 import { createNoteWithBlock, updateNote } from "../../notes";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth";
-import { usePermissions } from "../../hooks/usePermissions";
+import { usePermissions } from "../../hooks/usePermissionsCache";
+import { useNotesCache, type NoteInfo } from "../../hooks/useNotesCache";
 
-type UINote = Note & { id: string; parentId?: string | null };
-type TreeNode = { id: string; note: UINote; children: TreeNode[] };
+type TreeNode = { id: string; note: NoteInfo; children: TreeNode[] };
 
-function buildTree(notes: UINote[]): TreeNode[] {
+function buildTree(notes: NoteInfo[]): TreeNode[] {
   const byId = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
@@ -117,7 +114,7 @@ function TreeView({
 }
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
-  const [notes, setNotes] = useState<UINote[]>([]);
+  const { notes } = useNotesCache();
   const [menu, setMenu] = useState<{
     x: number;
     y: number;
@@ -129,31 +126,6 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const { user } = useAuth();
   const { canEdit } = usePermissions(user?.email);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "notes"), (snap) => {
-      const arr: UINote[] = snap.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title ?? "",
-          content: data.content ?? "",
-          createdBy: data.createdBy ?? "",
-          visibility: data.visibility ?? "party",
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-          tags: data.tags ?? [],
-          links: data.links ?? [],
-          template: data.template ?? null,
-          metadata: data.metadata ?? {},
-          parentId: data.parentId ?? null,
-          noteType: data.noteType,
-        };
-      });
-      setNotes(arr);
-    });
-    return () => unsub();
-  }, []);
 
   const tree = useMemo(() => buildTree(notes), [notes]);
 

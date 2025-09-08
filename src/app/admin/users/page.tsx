@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../auth";
-import { usePermissions } from "../../../hooks/usePermissions";
+import { usePermissions } from "../../../hooks/usePermissionsCache";
 import { UserRole } from "../../../permissions";
 
 interface User {

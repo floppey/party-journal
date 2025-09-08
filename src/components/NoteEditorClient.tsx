@@ -13,7 +13,7 @@ import {
 } from "../notes";
 import { useAuth } from "../auth";
 import { Markdown } from "./Markdown";
-import { usePermissions } from "../hooks/usePermissions";
+import { usePermissions } from "../hooks/usePermissionsCache";
 
 export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const [note, setNote] = useState<Note | null>(null);

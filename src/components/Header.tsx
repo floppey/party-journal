@@ -4,7 +4,7 @@ import { useAuth, logout } from "../auth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createNoteWithBlock } from "../notes";
-import { usePermissions } from "../hooks/usePermissions";
+import { usePermissions } from "../hooks/usePermissionsCache";
 
 export default function Header() {
   const { user } = useAuth();
