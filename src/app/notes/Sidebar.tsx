@@ -1,6 +1,6 @@
 // src/app/notes/Sidebar.tsx
 "use client";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createNoteWithBlock, updateNote } from "../../notes";
 import { useRouter } from "next/navigation";
@@ -79,6 +79,7 @@ function TreeView({
   onDragLeave,
   dragOverId,
   onClose,
+  searchQuery,
 }: {
   nodes: TreeNode[];
   depth?: number;
@@ -90,7 +91,33 @@ function TreeView({
   onDragLeave: (e: React.DragEvent, node: TreeNode) => void;
   dragOverId: string | null;
   onClose?: () => void;
+  searchQuery?: string;
 }) {
+  const highlight = useCallback(
+    (text: string) => {
+      const q = (searchQuery || "").trim();
+      if (!q) return text;
+      try {
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const parts = text.split(new RegExp(`(${escaped})`, "ig"));
+        return parts.map((part, i) =>
+          part.toLowerCase() === q.toLowerCase() ? (
+            <span
+              key={i}
+              className="bg-yellow-500/40 dark:bg-yellow-400/30 rounded px-0.5"
+            >
+              {part}
+            </span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        );
+      } catch {
+        return text; // fallback if regex fails
+      }
+    },
+    [searchQuery]
+  );
   return (
     <ul>
       {nodes.map((n) => (
@@ -119,13 +146,12 @@ function TreeView({
               href={`/notes/${n.id}`}
               style={{ color: "var(--foreground)" }}
               onClick={() => {
-                // Close sidebar on mobile when a note is selected
                 if (onClose && window.innerWidth < 1024) {
                   onClose();
                 }
               }}
             >
-              {n.note.title || "(untitled)"}
+              {highlight(n.note.title || "(untitled)")}
             </Link>
           </div>
           {n.children.length > 0 && (
@@ -140,6 +166,7 @@ function TreeView({
               onDragLeave={onDragLeave}
               dragOverId={dragOverId}
               onClose={onClose}
+              searchQuery={searchQuery}
             />
           )}
         </li>
@@ -150,6 +177,8 @@ function TreeView({
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { notes } = useNotesCache();
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const [menu, setMenu] = useState<{
     x: number;
     y: number;
@@ -163,6 +192,22 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { canEdit } = usePermissions(user?.email);
 
   const tree = useMemo(() => buildTree(notes), [notes]);
+
+  const filteredTree = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return tree;
+    const filterNodes = (nodes: TreeNode[]): TreeNode[] => {
+      const res: TreeNode[] = [];
+      for (const n of nodes) {
+        const children = filterNodes(n.children);
+        if (n.note.title.toLowerCase().includes(q) || children.length) {
+          res.push({ ...n, children });
+        }
+      }
+      return res;
+    };
+    return filterNodes(tree);
+  }, [tree, search]);
 
   const parentMap = useMemo(() => {
     const map = new Map<string, string | null | undefined>();
@@ -280,6 +325,28 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const onDragEnterRoot = useCallback(() => setDragOverRoot(true), []);
   const onDragLeaveRoot = useCallback(() => setDragOverRoot(false), []);
 
+  // Keyboard shortcut: Ctrl/Cmd + K focuses search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore if user is typing inside an editable field already
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        const isEditable = target instanceof HTMLElement && target.isContentEditable;
+        if (tag === "INPUT" || tag === "TEXTAREA" || isEditable) {
+          // Allow re-trigger even if already focused; no early return necessary
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <aside
       className="w-64 h-full overflow-y-auto"
@@ -303,9 +370,35 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       >
         Notes
       </div>
+      <div className="px-3 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="relative">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search notes (Ctrl+K)" // hint shortcut
+            aria-label="Search notes"
+            className="w-full text-sm px-2 py-1 rounded bg-transparent border"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+            }}
+            ref={searchRef}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-1 top-1/2 -translate-y-1/2 text-xs px-1 rounded hover:opacity-80"
+              style={{ background: "var(--surface)" }}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
       <div onMouseDown={() => menu && setMenu(null)}>
         <TreeView
-          nodes={tree}
+          nodes={filteredTree}
           onContextMenu={onContextMenu}
           onDragStart={onDragStart}
           onDragOver={onDragOverNode}
@@ -314,6 +407,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           onDragLeave={onDragLeaveNode}
           dragOverId={dragOverId}
           onClose={onClose}
+          searchQuery={search}
         />
       </div>
       {menu && (
