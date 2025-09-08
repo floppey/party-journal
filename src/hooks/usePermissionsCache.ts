@@ -20,9 +20,10 @@ interface PermissionsCacheData extends PermissionResult {
 class PermissionsCache {
   private static instance: PermissionsCache;
   private cache: Map<string, PermissionsCacheData> = new Map();
-  private subscribers: Map<string, Set<(data: PermissionsCacheData) => void>> = new Map();
+  private subscribers: Map<string, Set<(data: PermissionsCacheData) => void>> =
+    new Map();
   private activeRequests: Map<string, Promise<PermissionResult>> = new Map();
-  
+
   // Cache for 5 minutes
   private readonly CACHE_DURATION = 5 * 60 * 1000;
 
@@ -33,7 +34,10 @@ class PermissionsCache {
     return PermissionsCache.instance;
   }
 
-  subscribe(email: string, callback: (data: PermissionsCacheData) => void): () => void {
+  subscribe(
+    email: string,
+    callback: (data: PermissionsCacheData) => void
+  ): () => void {
     if (!email) {
       // Handle empty email case
       const emptyData: PermissionsCacheData = {
@@ -59,8 +63,8 @@ class PermissionsCache {
     // Check if we have valid cached data
     const cached = this.cache.get(email);
     const now = Date.now();
-    
-    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+
+    if (cached && now - cached.timestamp < this.CACHE_DURATION) {
       // Return cached data immediately
       console.log(`📋 Using cached permissions for ${email}`);
       callback(cached);
@@ -114,7 +118,9 @@ class PermissionsCache {
     }
   }
 
-  private async makePermissionsRequest(email: string): Promise<PermissionResult> {
+  private async makePermissionsRequest(
+    email: string
+  ): Promise<PermissionResult> {
     const response = await fetch("/api/permissions", {
       method: "POST",
       headers: {
@@ -131,9 +137,9 @@ class PermissionsCache {
   }
 
   private updateCache(
-    email: string, 
-    permissions: PermissionResult, 
-    error: Error | null, 
+    email: string,
+    permissions: PermissionResult,
+    error: Error | null,
     loading: boolean = false
   ): void {
     const data: PermissionsCacheData = {
@@ -149,7 +155,7 @@ class PermissionsCache {
     // Notify all subscribers for this email
     const emailSubscribers = this.subscribers.get(email);
     if (emailSubscribers) {
-      emailSubscribers.forEach(callback => callback(data));
+      emailSubscribers.forEach((callback) => callback(data));
     }
   }
 
@@ -163,19 +169,9 @@ class PermissionsCache {
   }
 
   // Debug method to see cache status
-  getCacheStatus(): Record<string, {
-    email: string;
-    isAllowed: boolean;
-    canEdit: boolean;
-    isAdmin: boolean;
-    role: UserRole | null;
-    timestamp: number;
-    loading: boolean;
-    error: string | null;
-    age: number;
-    subscribers: number;
-  }> {
-    const status: Record<string, {
+  getCacheStatus(): Record<
+    string,
+    {
       email: string;
       isAllowed: boolean;
       canEdit: boolean;
@@ -186,8 +182,24 @@ class PermissionsCache {
       error: string | null;
       age: number;
       subscribers: number;
-    }> = {};
-    
+    }
+  > {
+    const status: Record<
+      string,
+      {
+        email: string;
+        isAllowed: boolean;
+        canEdit: boolean;
+        isAdmin: boolean;
+        role: UserRole | null;
+        timestamp: number;
+        loading: boolean;
+        error: string | null;
+        age: number;
+        subscribers: number;
+      }
+    > = {};
+
     this.cache.forEach((data, email) => {
       status[email] = {
         ...data,

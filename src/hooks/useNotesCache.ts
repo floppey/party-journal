@@ -30,12 +30,12 @@ class NotesCache {
 
   subscribe(callback: (notes: NoteInfo[]) => void): () => void {
     this.subscribers.add(callback);
-    
+
     // Start Firebase subscription if this is the first subscriber
     if (!this.isSubscribed) {
       this.startFirebaseSubscription();
     }
-    
+
     // Immediately call with current data if available
     if (this.notes.size > 0) {
       callback(Array.from(this.notes.values()));
@@ -44,7 +44,7 @@ class NotesCache {
     // Return unsubscribe function
     return () => {
       this.subscribers.delete(callback);
-      
+
       // Stop Firebase subscription if no more subscribers
       if (this.subscribers.size === 0) {
         this.stopFirebaseSubscription();
@@ -56,33 +56,37 @@ class NotesCache {
     if (this.isSubscribed) return;
 
     console.log("🔥 Starting optimized Firebase notes subscription");
-    
+
     // Only fetch the fields we need for navigation
     const notesQuery = query(collection(db, "notes"));
-    
-    this.unsubscribe = onSnapshot(notesQuery, (snapshot) => {
-      console.log(`📥 Received ${snapshot.docs.length} notes from Firebase`);
-      
-      // Update cache
-      this.notes.clear();
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        this.notes.set(doc.id, {
-          id: doc.id,
-          title: data.title ?? "",
-          parentId: data.parentId ?? null,
-          noteType: data.noteType ?? "note",
-          updatedAt: data.updatedAt,
-          createdBy: data.createdBy ?? "",
-        });
-      });
 
-      // Notify all subscribers
-      const notesArray = Array.from(this.notes.values());
-      this.subscribers.forEach(callback => callback(notesArray));
-    }, (error) => {
-      console.error("❌ Firebase notes subscription error:", error);
-    });
+    this.unsubscribe = onSnapshot(
+      notesQuery,
+      (snapshot) => {
+        console.log(`📥 Received ${snapshot.docs.length} notes from Firebase`);
+
+        // Update cache
+        this.notes.clear();
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          this.notes.set(doc.id, {
+            id: doc.id,
+            title: data.title ?? "",
+            parentId: data.parentId ?? null,
+            noteType: data.noteType ?? "note",
+            updatedAt: data.updatedAt,
+            createdBy: data.createdBy ?? "",
+          });
+        });
+
+        // Notify all subscribers
+        const notesArray = Array.from(this.notes.values());
+        this.subscribers.forEach((callback) => callback(notesArray));
+      },
+      (error) => {
+        console.error("❌ Firebase notes subscription error:", error);
+      }
+    );
 
     this.isSubscribed = true;
   }

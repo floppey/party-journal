@@ -41,7 +41,9 @@ function UnauthenticatedLanding() {
 function AuthenticatedLanding() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
-  const { isAllowed, loading: permissionsLoading } = usePermissions(user?.email);
+  const { isAllowed, loading: permissionsLoading } = usePermissions(
+    user?.email
+  );
   const { hasNotes, loading: notesLoading } = useHasNotes();
 
   // Show loading state while checking permissions
