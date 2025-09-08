@@ -10,6 +10,41 @@ import { useNotesCache, type NoteInfo } from "../../hooks/useNotesCache";
 
 type TreeNode = { id: string; note: NoteInfo; children: TreeNode[] };
 
+// Natural sorting function that handles numbers properly
+function naturalCompare(a: string, b: string): number {
+  // Convert strings to arrays of parts (text and numbers)
+  const aParts = a.match(/(\d+|\D+)/g) || [];
+  const bParts = b.match(/(\d+|\D+)/g) || [];
+  
+  const maxLength = Math.max(aParts.length, bParts.length);
+  
+  for (let i = 0; i < maxLength; i++) {
+    const aPart = aParts[i] || '';
+    const bPart = bParts[i] || '';
+    
+    // Check if both parts are numbers
+    const aIsNumber = /^\d+$/.test(aPart);
+    const bIsNumber = /^\d+$/.test(bPart);
+    
+    if (aIsNumber && bIsNumber) {
+      // Compare as numbers
+      const aNum = parseInt(aPart, 10);
+      const bNum = parseInt(bPart, 10);
+      if (aNum !== bNum) {
+        return aNum - bNum;
+      }
+    } else {
+      // Compare as strings (case-insensitive)
+      const result = aPart.toLowerCase().localeCompare(bPart.toLowerCase());
+      if (result !== 0) {
+        return result;
+      }
+    }
+  }
+  
+  return 0;
+}
+
 function buildTree(notes: NoteInfo[]): TreeNode[] {
   const byId = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
@@ -26,7 +61,7 @@ function buildTree(notes: NoteInfo[]): TreeNode[] {
     }
   }
   const sortRec = (nodes: TreeNode[]) => {
-    nodes.sort((a, b) => a.note.title.localeCompare(b.note.title));
+    nodes.sort((a, b) => naturalCompare(a.note.title, b.note.title));
     nodes.forEach((n) => sortRec(n.children));
   };
   sortRec(roots);
