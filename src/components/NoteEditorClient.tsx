@@ -28,6 +28,20 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const [editorText, setEditorText] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const newNoteFlagRef = useRef(false);
+  // Detect ?new=1 to auto enter edit mode then clean URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") === "1") {
+      newNoteFlagRef.current = true;
+      setMode("edit");
+      // Remove the query param without a navigation
+      const path = window.location.pathname;
+      window.history.replaceState({}, "", path);
+    }
+  }, []);
   const typingRef = useRef(false);
   const adminTypingRef = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,6 +196,22 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
   }, [canUserEdit]);
   const markdown = editorText;
 
+  // Focus logic after note loads if it was a new note (must be before returns for hook order)
+  useEffect(() => {
+    if (!note || !newNoteFlagRef.current) return;
+    if (titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+    const t = setTimeout(() => {
+      if (mode === "edit" && textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }, 120);
+    newNoteFlagRef.current = false;
+    return () => clearTimeout(t);
+  }, [note, mode]);
+
   if (loading || authLoading || permissionsLoading)
     return <div>Loading...</div>;
   if (!note) return <div>Note not found.</div>;
@@ -191,7 +221,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
       className=" mx-auto p-4 rounded shadow"
       style={{ backgroundColor: "var(--surface)", color: "var(--foreground)" }}
     >
-      <input
+  <input
         value={title}
         onChange={(e) => {
           if (!canCurrentUserEdit) return;
@@ -214,7 +244,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         readOnly={!canCurrentUserEdit || mode !== "edit"}
         aria-readonly={!canCurrentUserEdit || mode !== "edit"}
         disabled={!canCurrentUserEdit && mode !== "edit"}
-        className="w-full text-2xl font-bold mb-3 bg-transparent outline-none"
+  className="w-full text-2xl font-bold mb-3 bg-transparent outline-none"
         style={{
           color: "var(--foreground)",
           borderBottom:
@@ -222,6 +252,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
               ? "1px solid var(--border)"
               : "none",
         }}
+  ref={titleInputRef}
       />
       {/* Toolbar */}
       {canCurrentUserEdit ? (

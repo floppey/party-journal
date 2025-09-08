@@ -49,7 +49,7 @@ export default function Header() {
                     },
                     ""
                   );
-                  router.push(`/notes/${id}`);
+                  router.push(`/notes/${id}?new=1`);
                 } finally {
                   setCreating(false);
                 }

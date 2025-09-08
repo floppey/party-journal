@@ -256,7 +256,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         },
         " "
       );
-      router.push(`/notes/${newId}`);
+  router.push(`/notes/${newId}?new=1`);
       setMenu(null);
     },
     [router, user, canEdit]
