@@ -8,29 +8,13 @@ import { useHasNotes } from "../hooks/useNotesCache";
 
 function UnauthenticatedLanding() {
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center"
-      style={{
-        backgroundColor: "var(--background)",
-        color: "var(--foreground)",
-      }}
-    >
-      <div
-        className="p-8 rounded shadow w-full max-w-md text-center"
-        style={{
-          backgroundColor: "var(--surface)",
-          color: "var(--foreground)",
-        }}
-      >
+    <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center px-4">
+      <div className="panel panel-elevated w-full max-w-md text-center p-8">
         <h1 className="text-3xl font-bold mb-4">Party Journal</h1>
-        <p className="mb-6" style={{ color: "var(--muted)" }}>
+        <p className="mb-6" style={{ color: 'var(--muted)' }}>
           A shared, real-time campaign journal for TTRPGs.
         </p>
-        <Link
-          href="/signin"
-          className="inline-block py-2 px-4 rounded hover:opacity-90"
-          style={{ backgroundColor: "#2563eb", color: "#fff" }}
-        >
+        <Link href="/signin" className="btn-primary inline-flex justify-center w-full">
           Sign in to get started
         </Link>
       </div>
@@ -49,16 +33,10 @@ function AuthenticatedLanding() {
   // Show loading state while checking permissions
   if (permissionsLoading || notesLoading) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{
-          backgroundColor: "var(--background)",
-          color: "var(--foreground)",
-        }}
-      >
+      <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p style={{ color: "var(--muted)" }}>Checking permissions...</p>
+          <p style={{ color: 'var(--muted)' }}>Checking permissions...</p>
         </div>
       </div>
     );
@@ -67,29 +45,15 @@ function AuthenticatedLanding() {
   // Show access denied if user is not allowed
   if (!isAllowed) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{
-          backgroundColor: "var(--background)",
-          color: "var(--foreground)",
-        }}
-      >
-        <div
-          className="p-8 rounded shadow w-full max-w-md text-center"
-          style={{
-            backgroundColor: "var(--surface)",
-            color: "var(--foreground)",
-          }}
-        >
+      <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center px-4">
+        <div className="panel panel-elevated w-full max-w-md text-center p-8">
           <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-6" style={{ color: "var(--muted)" }}>
-            Your email ({user?.email}) is not authorized to use this
-            application.
+          <p className="mb-6" style={{ color: 'var(--muted)' }}>
+            Your email ({user?.email}) is not authorized to use this application.
           </p>
           <button
-            onClick={() => (window.location.href = "/signin")}
-            className="inline-block py-2 px-4 rounded hover:opacity-90"
-            style={{ backgroundColor: "#dc2626", color: "#fff" }}
+            onClick={() => (window.location.href = '/signin')}
+            className="btn-outline w-full"
           >
             Sign out and try different account
           </button>
@@ -115,7 +79,7 @@ function AuthenticatedLanding() {
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -133,23 +97,14 @@ function AuthenticatedLanding() {
       </div>
 
       {/* Main content */}
-      <main
-        className="flex-1 p-8 overflow-auto flex flex-col items-center justify-center"
-        style={{
-          backgroundColor: "var(--background)",
-          color: "var(--foreground)",
-        }}
-      >
+    <main className="flex-1 p-6 overflow-auto flex flex-col items-center justify-center">
         {/* Mobile menu button - bottom right */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className={`lg:hidden fixed bottom-6 right-6 p-3 rounded-full shadow-lg transition-all duration-300 ${
             sidebarOpen ? "z-[60]" : "z-30"
           }`}
-          style={{
-            backgroundColor: "#2563eb",
-            color: "#fff",
-          }}
+      style={{ background: 'linear-gradient(135deg,var(--accent),var(--accent-hover))', color: '#fff' }}
         >
           {sidebarOpen ? (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -172,24 +127,14 @@ function AuthenticatedLanding() {
           )}
         </button>
 
-        <div
-          className="p-8 rounded shadow w-full max-w-md text-center"
-          style={{
-            backgroundColor: "var(--surface)",
-            color: "var(--foreground)",
-          }}
-        >
+        <div className="panel panel-elevated w-full max-w-md text-center p-8">
           <h1 className="text-3xl font-bold mb-4">Welcome to Party Journal</h1>
-          <p className="mb-6" style={{ color: "var(--muted)" }}>
+          <p className="mb-6" style={{ color: 'var(--muted)' }}>
             {hasNotes
               ? "Your shared, real-time campaign journal for TTRPGs. Select a note from the sidebar to view or edit it, or create a new one."
               : "Your shared, real-time campaign journal for TTRPGs. Get started by creating your first note."}
           </p>
-          <Link
-            href="/notes/new"
-            className="inline-block py-2 px-4 rounded hover:opacity-90"
-            style={{ backgroundColor: "#2563eb", color: "#fff" }}
-          >
+          <Link href="/notes/new" className="btn-primary inline-flex justify-center w-full">
             {hasNotes ? "Create new note" : "Create your first note"}
           </Link>
         </div>

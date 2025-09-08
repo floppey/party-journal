@@ -2,6 +2,7 @@
 "use client";
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createNoteWithBlock, updateNote } from "../../notes";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth";
@@ -84,6 +85,7 @@ function TreeView({
   collapsed,
   toggleCollapse,
   searchActive,
+  pathname,
 }: {
   nodes: TreeNode[];
   depth?: number;
@@ -100,6 +102,7 @@ function TreeView({
   collapsed: Set<string>;
   toggleCollapse: (id: string) => void;
   searchActive: boolean;
+  pathname: string;
 }) {
   const highlight = useCallback(
     (text: string) => {
@@ -144,14 +147,14 @@ function TreeView({
             onDragLeave={(e) => onDragLeave(e, n)}
           >
             <div
-              className="py-1 px-2 hover:opacity-80 rounded group flex items-center gap-1"
+              className="py-1 px-2 rounded group flex items-center gap-1 transition-colors"
               style={{
                 paddingLeft: `${8 + depth * 12}px`,
                 backgroundColor:
-                  dragOverId === n.id ? "rgba(37,99,235,0.12)" : undefined,
+                  dragOverId === n.id ? "var(--accent-bg)" : undefined,
                 outline:
                   dragOverId === n.id
-                    ? "2px solid rgba(37,99,235,0.35)"
+                    ? "2px solid var(--accent-bg-strong)"
                     : "none",
                 outlineOffset: 0,
               }}
@@ -167,11 +170,17 @@ function TreeView({
                     toggleCollapse(n.id);
                   }}
                   aria-label={isCollapsed ? "Expand section" : "Collapse section"}
-                  className="w-4 h-4 flex items-center justify-center text-xs select-none"
+                  className="w-4 h-4 flex items-center justify-center text-xs select-none text-[11px] rounded focus-visible:outline-none"
                   style={{
-                    color: "var(--foreground)",
+                    color: "var(--muted)",
                     transform: !isCollapsed ? "rotate(90deg)" : "rotate(0deg)",
                     transition: "transform 0.15s ease",
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleCollapse(n.id);
+                    }
                   }}
                 >
                   ▶
@@ -185,25 +194,15 @@ function TreeView({
                     onClose();
                   }
                 }}
-                className={isDuplicate ? "relative" : undefined}
+                className={`${isDuplicate ? 'relative' : ''} ${pathname === '/notes/' + n.id ? 'note-active' : ''}`}
               >
                 {highlight(rawTitle)}
                 {isDuplicate && (
-                  <span
-                    className="ml-1 text-[10px] px-1 py-0.5 rounded bg-red-500/70 text-white hidden md:inline"
-                    title="Duplicate title"
-                  >
-                    dup
-                  </span>
+                  <span className="ml-1 hidden md:inline badge-dup" title="Duplicate title">dup</span>
                 )}
               </Link>
               {isDuplicate && (
-                <span
-                  className="md:hidden text-red-500 text-xs"
-                  title="Duplicate title"
-                >
-                  •
-                </span>
+                <span className="md:hidden text-red-500 text-xs" title="Duplicate title">•</span>
               )}
             </div>
             {hasChildren && !isCollapsed && (
@@ -223,6 +222,7 @@ function TreeView({
                 collapsed={collapsed}
                 toggleCollapse={toggleCollapse}
                 searchActive={searchActive}
+                pathname={pathname}
               />
             )}
           </li>
@@ -233,6 +233,7 @@ function TreeView({
 }
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
+  const pathname = usePathname() || "";
   const { notes } = useNotesCache();
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
@@ -471,19 +472,19 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   return (
     <aside
-      className="w-64 h-full overflow-y-auto"
+      className="w-64 h-full overflow-y-auto panel"
       style={{
-        backgroundColor: "var(--surface)",
-        color: "var(--foreground)",
-        borderRight: "1px solid var(--border)",
+        background: 'linear-gradient(145deg,var(--surface) 0%, var(--surface-muted) 100%)',
+        color: 'var(--foreground)',
+        borderRight: '1px solid var(--border)'
       }}
     >
       <div
-        className="p-4 font-bold text-lg flex items-center justify-between"
+        className="p-4 font-semibold text-sm tracking-wide flex items-center justify-between uppercase"
         style={{
-          borderBottom: "1px solid var(--border)",
-          backgroundColor: dragOverRoot ? "rgba(37,99,235,0.12)" : undefined,
-          outline: dragOverRoot ? "2px solid rgba(37,99,235,0.35)" : "none",
+          borderBottom: '1px solid var(--border)',
+          backgroundColor: dragOverRoot ? 'var(--accent-bg)' : 'transparent',
+          outline: dragOverRoot ? '2px solid var(--accent-bg-strong)' : 'none'
         }}
         onDragOver={onDragOverRoot}
         onDrop={onDropOnRoot}
@@ -494,7 +495,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
       <div
         className="px-3 py-2"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        style={{ borderBottom: '1px solid var(--border)' }}
       >
         <div className="relative">
           <input
@@ -502,11 +503,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search notes (Ctrl+K)" // hint shortcut
             aria-label="Search notes"
-            className="w-full text-sm px-2 py-1 rounded bg-transparent border"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
-            }}
+            className="w-full text-sm px-2 py-1 rounded border bg-transparent focus-visible:outline-none"
+            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
             ref={searchRef}
           />
           {duplicateTitleKeys.size > 0 && (
@@ -520,7 +518,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             <button
               onClick={() => setSearch("")}
               className="absolute right-1 top-1/2 -translate-y-1/2 text-xs px-1 rounded hover:opacity-80"
-              style={{ background: "var(--surface)" }}
+              style={{ background: 'var(--surface-secondary)' }}
               aria-label="Clear search"
             >
               ×
@@ -544,6 +542,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           collapsed={collapsed}
           toggleCollapse={toggleCollapse}
           searchActive={searchActive}
+          pathname={pathname}
         />
       </div>
       {menu && (

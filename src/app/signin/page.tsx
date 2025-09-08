@@ -58,23 +58,11 @@ export default function SignInPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center"
-      style={{
-        backgroundColor: "var(--background)",
-        color: "var(--foreground)",
-      }}
-    >
-      <div
-        className="p-8 rounded shadow w-full max-w-md"
-        style={{
-          backgroundColor: "var(--surface)",
-          color: "var(--foreground)",
-        }}
-      >
+    <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center px-4">
+      <div className="panel panel-elevated w-full max-w-md p-8">
         <h1 className="text-2xl font-bold mb-4">Sign In</h1>
         <button
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded mb-4 hover:bg-blue-700"
+          className="btn-primary w-full mb-4"
           onClick={handleGoogle}
         >
           Sign in with Google
@@ -85,23 +73,23 @@ export default function SignInPage() {
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border rounded mb-2"
+            className="w-full px-3 py-2 mb-2"
           />
           <button
-            className="w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700"
+            className="btn-outline w-full"
             onClick={handleEmail}
             disabled={sent}
           >
-            {sent ? "Email link sent!" : "Sign in with Email link"}
+            {sent ? "Email link sent!" : "Send magic link"}
           </button>
         </div>
         <button
-          className="w-full py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700 mb-2"
+          className="btn-outline w-full mb-2"
           onClick={handleCompleteEmailSignIn}
         >
           Complete Email Link Sign-In
         </button>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
+        {error && <div className="text-red-500 mt-2 text-sm">{error}</div>}
       </div>
     </div>
   );

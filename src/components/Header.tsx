@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth, logout } from "../auth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,30 +9,23 @@ import { usePermissions } from "../hooks/usePermissionsCache";
 
 export default function Header() {
   const { user } = useAuth();
+  const pathname = usePathname() || "";
   const { canEdit, isAdmin } = usePermissions(user?.email);
   const [creating, setCreating] = useState(false);
   const router = useRouter();
 
   return (
-    <header
-      className="w-full"
-      style={{
-        backgroundColor: "var(--surface)",
-        color: "var(--foreground)",
-        borderBottom: "1px solid var(--border)",
-      }}
-    >
-      <div className="mx-auto max-w-6xl px-2 sm:px-4 py-3 sm:py-3 flex items-center justify-between min-h-[56px] sm:min-h-0">
+    <header className="w-full glass-header">
+      <div className="mx-auto max-w-6xl px-3 sm:px-6 py-3 flex items-center justify-between gap-4 min-h-[56px]">
         <Link
           href="/"
-          className="flex items-center gap-1 sm:gap-2 font-semibold text-base sm:text-lg"
-          style={{ color: "var(--foreground)" }}
+          className={`flex items-center gap-2 font-semibold text-base sm:text-lg tracking-wide nav-link ${pathname === '/' ? 'nav-active' : ''}`}
         >
-          <span className="text-sm sm:text-base">📝</span>
-          <span className="hidden sm:inline">Party Journal</span>
+          <span className="text-lg sm:text-xl select-none">🧭</span>
+          <span className="hidden sm:inline drop-shadow-sm">Party Journal</span>
           <span className="sm:hidden">PJ</span>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {user && canEdit && (
             <button
               onClick={async () => {
@@ -54,9 +48,8 @@ export default function Header() {
                   setCreating(false);
                 }
               }}
-              disabled={creating}
-              className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
-              style={{ backgroundColor: "#2563eb", color: "#fff" }}
+        disabled={creating}
+        className="btn-primary text-xs sm:text-sm flex items-center justify-center whitespace-nowrap min-h-[38px]"
             >
               <span className="hidden sm:inline">
                 {creating ? "Creating…" : "New note"}
@@ -69,11 +62,7 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "1px solid var(--border)",
-                  }}
+                  className={`btn-outline text-xs sm:text-sm flex items-center justify-center min-h-[38px] nav-link ${pathname.startsWith('/admin') ? 'nav-active' : ''}`}
                 >
                   <span className="hidden sm:inline">Admin</span>
                   <span className="sm:hidden">⚙️</span>
@@ -94,14 +83,7 @@ export default function Header() {
               >
                 {user.displayName ?? user.email}
               </span>
-              <button
-                onClick={() => logout()}
-                className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
-                style={{
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--border)",
-                }}
-              >
+              <button onClick={() => logout()} className="btn-outline text-xs sm:text-sm min-h-[38px]">
                 <span className="hidden sm:inline">Sign out</span>
                 <span className="sm:hidden">↗</span>
               </button>
@@ -109,8 +91,7 @@ export default function Header() {
           ) : (
             <Link
               href="/signin"
-              className="text-xs sm:text-sm px-3 sm:px-3 py-3 sm:py-1 rounded min-h-[42px] sm:min-h-0 min-w-[42px] sm:min-w-0 flex items-center justify-center"
-              style={{ backgroundColor: "#2563eb", color: "#fff" }}
+              className="btn-primary text-xs sm:text-sm flex items-center justify-center min-h-[38px]"
             >
               <span className="hidden sm:inline">Sign in</span>
               <span className="sm:hidden">↗</span>
