@@ -219,7 +219,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
   return (
     <div
       className="mx-auto p-5 panel panel-elevated"
-      style={{ color: 'var(--foreground)' }}
+      style={{ color: "var(--foreground)" }}
     >
       <input
         value={title}
@@ -246,9 +246,11 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         disabled={!canCurrentUserEdit && mode !== "edit"}
         className="w-full text-2xl font-bold mb-3 bg-transparent outline-none border-b"
         style={{
-          color: 'var(--foreground)',
+          color: "var(--foreground)",
           borderColor:
-            mode === 'edit' && canCurrentUserEdit ? 'var(--border)' : 'transparent'
+            mode === "edit" && canCurrentUserEdit
+              ? "var(--border)"
+              : "transparent",
         }}
         ref={titleInputRef}
       />
@@ -257,10 +259,10 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         <div className="mb-4 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => setMode((m) => (m === 'view' ? 'edit' : 'view'))}
+            onClick={() => setMode((m) => (m === "view" ? "edit" : "view"))}
             className="btn-outline text-sm"
           >
-            {mode === 'view' ? 'Edit' : 'Done'}
+            {mode === "view" ? "Edit" : "Done"}
           </button>
         </div>
       ) : null}
@@ -290,18 +292,18 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
             rows={20}
             className="w-full p-3 border rounded font-mono text-sm bg-transparent"
             style={{
-              color: 'var(--foreground)',
-              borderColor: 'var(--border)',
-              lineHeight: '1.5'
+              color: "var(--foreground)",
+              borderColor: "var(--border)",
+              lineHeight: "1.5",
             }}
             placeholder="Start typing markdown..."
           />
           <div
             className="w-full p-3 border rounded overflow-auto prose dark:prose-invert bg-transparent"
             style={{
-              color: 'var(--foreground)',
-              borderColor: 'var(--border)',
-              lineHeight: '1.6'
+              color: "var(--foreground)",
+              borderColor: "var(--border)",
+              lineHeight: "1.6",
             }}
           >
             <Markdown markdown={markdown} />
@@ -311,9 +313,9 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         <div
           className="w-full p-3 border rounded overflow-auto prose dark:prose-invert mb-4 bg-transparent"
           style={{
-            color: 'var(--foreground)',
-            borderColor: 'var(--border)',
-            lineHeight: '1.6'
+            color: "var(--foreground)",
+            borderColor: "var(--border)",
+            lineHeight: "1.6",
           }}
         >
           <Markdown markdown={markdown} />
@@ -325,9 +327,10 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         <div
           className="mt-6 p-4 border rounded panel"
           style={{
-            background: 'linear-gradient(145deg,var(--surface) 0%, var(--surface-muted) 100%)',
-            borderColor: 'var(--border)',
-            borderLeft: '4px solid #dc2626'
+            background:
+              "linear-gradient(145deg,var(--surface) 0%, var(--surface-muted) 100%)",
+            borderColor: "var(--border)",
+            borderLeft: "4px solid #dc2626",
           }}
         >
           <h3 className="text-lg font-semibold mb-2 text-red-600 dark:text-red-400">
@@ -361,18 +364,18 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
                 rows={8}
                 className="w-full p-3 border rounded font-mono text-sm bg-transparent"
                 style={{
-                  color: 'var(--foreground)',
-                  borderColor: 'var(--border)',
-                  lineHeight: '1.5'
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  lineHeight: "1.5",
                 }}
                 placeholder="Admin-only notes (markdown supported)..."
               />
               <div
                 className="w-full p-3 border rounded overflow-auto prose dark:prose-invert bg-transparent"
                 style={{
-                  color: 'var(--foreground)',
-                  borderColor: 'var(--border)',
-                  lineHeight: '1.6'
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  lineHeight: "1.6",
                 }}
               >
                 <Markdown markdown={adminNotes} />
@@ -382,9 +385,9 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
             <div
               className="w-full p-3 border rounded overflow-auto prose dark:prose-invert bg-transparent"
               style={{
-                color: 'var(--foreground)',
-                borderColor: 'var(--border)',
-                lineHeight: '1.6'
+                color: "var(--foreground)",
+                borderColor: "var(--border)",
+                lineHeight: "1.6",
               }}
             >
               <Markdown markdown={adminNotes} />

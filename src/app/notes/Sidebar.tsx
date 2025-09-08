@@ -169,7 +169,9 @@ function TreeView({
                     e.stopPropagation();
                     toggleCollapse(n.id);
                   }}
-                  aria-label={isCollapsed ? "Expand section" : "Collapse section"}
+                  aria-label={
+                    isCollapsed ? "Expand section" : "Collapse section"
+                  }
                   className="w-4 h-4 flex items-center justify-center text-xs select-none text-[11px] rounded focus-visible:outline-none"
                   style={{
                     color: "var(--muted)",
@@ -177,7 +179,7 @@ function TreeView({
                     transition: "transform 0.15s ease",
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       toggleCollapse(n.id);
                     }
@@ -194,15 +196,27 @@ function TreeView({
                     onClose();
                   }
                 }}
-                className={`${isDuplicate ? 'relative' : ''} ${pathname === '/notes/' + n.id ? 'note-active' : ''}`}
+                className={`${isDuplicate ? "relative" : ""} ${
+                  pathname === "/notes/" + n.id ? "note-active" : ""
+                }`}
               >
                 {highlight(rawTitle)}
                 {isDuplicate && (
-                  <span className="ml-1 hidden md:inline badge-dup" title="Duplicate title">dup</span>
+                  <span
+                    className="ml-1 hidden md:inline badge-dup"
+                    title="Duplicate title"
+                  >
+                    dup
+                  </span>
                 )}
               </Link>
               {isDuplicate && (
-                <span className="md:hidden text-red-500 text-xs" title="Duplicate title">•</span>
+                <span
+                  className="md:hidden text-red-500 text-xs"
+                  title="Duplicate title"
+                >
+                  •
+                </span>
               )}
             </div>
             {hasChildren && !isCollapsed && (
@@ -274,10 +288,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const toggleCollapse = useCallback((id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       // Persist to localStorage (best effort)
       try {
-        localStorage.setItem('sidebarCollapsed', JSON.stringify(Array.from(next)));
+        localStorage.setItem(
+          "sidebarCollapsed",
+          JSON.stringify(Array.from(next))
+        );
       } catch {}
       return next;
     });
@@ -286,11 +304,11 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   // Load persisted collapsed state
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('sidebarCollapsed');
+      const raw = localStorage.getItem("sidebarCollapsed");
       if (raw) {
         const arr: unknown = JSON.parse(raw);
         if (Array.isArray(arr)) {
-          setCollapsed(new Set(arr.filter((x) => typeof x === 'string')));
+          setCollapsed(new Set(arr.filter((x) => typeof x === "string")));
           setCollapsedInitialized(true); // we have a saved state, skip default collapse
         }
       }
@@ -474,17 +492,18 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     <aside
       className="w-64 h-full overflow-y-auto panel"
       style={{
-        background: 'linear-gradient(145deg,var(--surface) 0%, var(--surface-muted) 100%)',
-        color: 'var(--foreground)',
-        borderRight: '1px solid var(--border)'
+        background:
+          "linear-gradient(145deg,var(--surface) 0%, var(--surface-muted) 100%)",
+        color: "var(--foreground)",
+        borderRight: "1px solid var(--border)",
       }}
     >
       <div
         className="p-4 font-semibold text-sm tracking-wide flex items-center justify-between uppercase"
         style={{
-          borderBottom: '1px solid var(--border)',
-          backgroundColor: dragOverRoot ? 'var(--accent-bg)' : 'transparent',
-          outline: dragOverRoot ? '2px solid var(--accent-bg-strong)' : 'none'
+          borderBottom: "1px solid var(--border)",
+          backgroundColor: dragOverRoot ? "var(--accent-bg)" : "transparent",
+          outline: dragOverRoot ? "2px solid var(--accent-bg-strong)" : "none",
         }}
         onDragOver={onDragOverRoot}
         onDrop={onDropOnRoot}
@@ -495,7 +514,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
       <div
         className="px-3 py-2"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div className="relative">
           <input
@@ -504,7 +523,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             placeholder="Search notes (Ctrl+K)" // hint shortcut
             aria-label="Search notes"
             className="w-full text-sm px-2 py-1 rounded border bg-transparent focus-visible:outline-none"
-            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+            style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
             ref={searchRef}
           />
           {duplicateTitleKeys.size > 0 && (
@@ -518,7 +537,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             <button
               onClick={() => setSearch("")}
               className="absolute right-1 top-1/2 -translate-y-1/2 text-xs px-1 rounded hover:opacity-80"
-              style={{ background: 'var(--surface-secondary)' }}
+              style={{ background: "var(--surface-secondary)" }}
               aria-label="Clear search"
             >
               ×

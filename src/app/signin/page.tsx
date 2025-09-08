@@ -61,10 +61,7 @@ export default function SignInPage() {
     <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center px-4">
       <div className="panel panel-elevated w-full max-w-md p-8">
         <h1 className="text-2xl font-bold mb-4">Sign In</h1>
-        <button
-          className="btn-primary w-full mb-4"
-          onClick={handleGoogle}
-        >
+        <button className="btn-primary w-full mb-4" onClick={handleGoogle}>
           Sign in with Google
         </button>
         <div className="mb-4">

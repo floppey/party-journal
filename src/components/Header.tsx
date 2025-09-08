@@ -19,7 +19,9 @@ export default function Header() {
       <div className="mx-auto max-w-6xl px-3 sm:px-6 py-3 flex items-center justify-between gap-4 min-h-[56px]">
         <Link
           href="/"
-          className={`flex items-center gap-2 font-semibold text-base sm:text-lg tracking-wide nav-link ${pathname === '/' ? 'nav-active' : ''}`}
+          className={`flex items-center gap-2 font-semibold text-base sm:text-lg tracking-wide nav-link ${
+            pathname === "/" ? "nav-active" : ""
+          }`}
         >
           <span className="text-lg sm:text-xl select-none">🧭</span>
           <span className="hidden sm:inline drop-shadow-sm">Party Journal</span>
@@ -48,8 +50,8 @@ export default function Header() {
                   setCreating(false);
                 }
               }}
-        disabled={creating}
-        className="btn-primary text-xs sm:text-sm flex items-center justify-center whitespace-nowrap min-h-[38px]"
+              disabled={creating}
+              className="btn-primary text-xs sm:text-sm flex items-center justify-center whitespace-nowrap min-h-[38px]"
             >
               <span className="hidden sm:inline">
                 {creating ? "Creating…" : "New note"}
@@ -62,7 +64,9 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className={`btn-outline text-xs sm:text-sm flex items-center justify-center min-h-[38px] nav-link ${pathname.startsWith('/admin') ? 'nav-active' : ''}`}
+                  className={`btn-outline text-xs sm:text-sm flex items-center justify-center min-h-[38px] nav-link ${
+                    pathname.startsWith("/admin") ? "nav-active" : ""
+                  }`}
                 >
                   <span className="hidden sm:inline">Admin</span>
                   <span className="sm:hidden">⚙️</span>
@@ -83,7 +87,10 @@ export default function Header() {
               >
                 {user.displayName ?? user.email}
               </span>
-              <button onClick={() => logout()} className="btn-outline text-xs sm:text-sm min-h-[38px]">
+              <button
+                onClick={() => logout()}
+                className="btn-outline text-xs sm:text-sm min-h-[38px]"
+              >
                 <span className="hidden sm:inline">Sign out</span>
                 <span className="sm:hidden">↗</span>
               </button>

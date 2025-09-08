@@ -41,12 +41,18 @@ export default function NotesLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main content */}
-  <main className="flex-1 p-4 overflow-auto">
+      <main className="flex-1 p-4 overflow-auto">
         {/* Mobile menu button - bottom right */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`lg:hidden fixed bottom-6 right-6 p-3 rounded-full shadow-lg transition-all duration-300 ${sidebarOpen ? 'z-[60]' : 'z-30'}`}
-          style={{ background: 'linear-gradient(135deg,var(--accent),var(--accent-hover))', color: '#fff' }}
+          className={`lg:hidden fixed bottom-6 right-6 p-3 rounded-full shadow-lg transition-all duration-300 ${
+            sidebarOpen ? "z-[60]" : "z-30"
+          }`}
+          style={{
+            background:
+              "linear-gradient(135deg,var(--accent),var(--accent-hover))",
+            color: "#fff",
+          }}
         >
           {sidebarOpen ? (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
