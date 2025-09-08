@@ -15,17 +15,17 @@ function naturalCompare(a: string, b: string): number {
   // Convert strings to arrays of parts (text and numbers)
   const aParts = a.match(/(\d+|\D+)/g) || [];
   const bParts = b.match(/(\d+|\D+)/g) || [];
-  
+
   const maxLength = Math.max(aParts.length, bParts.length);
-  
+
   for (let i = 0; i < maxLength; i++) {
-    const aPart = aParts[i] || '';
-    const bPart = bParts[i] || '';
-    
+    const aPart = aParts[i] || "";
+    const bPart = bParts[i] || "";
+
     // Check if both parts are numbers
     const aIsNumber = /^\d+$/.test(aPart);
     const bIsNumber = /^\d+$/.test(bPart);
-    
+
     if (aIsNumber && bIsNumber) {
       // Compare as numbers
       const aNum = parseInt(aPart, 10);
@@ -41,7 +41,7 @@ function naturalCompare(a: string, b: string): number {
       }
     }
   }
-  
+
   return 0;
 }
 
