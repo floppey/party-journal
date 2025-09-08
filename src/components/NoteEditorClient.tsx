@@ -221,7 +221,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
       className=" mx-auto p-4 rounded shadow"
       style={{ backgroundColor: "var(--surface)", color: "var(--foreground)" }}
     >
-  <input
+      <input
         value={title}
         onChange={(e) => {
           if (!canCurrentUserEdit) return;
@@ -244,7 +244,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
         readOnly={!canCurrentUserEdit || mode !== "edit"}
         aria-readonly={!canCurrentUserEdit || mode !== "edit"}
         disabled={!canCurrentUserEdit && mode !== "edit"}
-  className="w-full text-2xl font-bold mb-3 bg-transparent outline-none"
+        className="w-full text-2xl font-bold mb-3 bg-transparent outline-none"
         style={{
           color: "var(--foreground)",
           borderBottom:
@@ -252,7 +252,7 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
               ? "1px solid var(--border)"
               : "none",
         }}
-  ref={titleInputRef}
+        ref={titleInputRef}
       />
       {/* Toolbar */}
       {canCurrentUserEdit ? (

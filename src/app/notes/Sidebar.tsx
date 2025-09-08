@@ -80,6 +80,10 @@ function TreeView({
   dragOverId,
   onClose,
   searchQuery,
+  duplicateKeys,
+  collapsed,
+  toggleCollapse,
+  searchActive,
 }: {
   nodes: TreeNode[];
   depth?: number;
@@ -92,6 +96,10 @@ function TreeView({
   dragOverId: string | null;
   onClose?: () => void;
   searchQuery?: string;
+  duplicateKeys: Set<string>;
+  collapsed: Set<string>;
+  toggleCollapse: (id: string) => void;
+  searchActive: boolean;
 }) {
   const highlight = useCallback(
     (text: string) => {
@@ -118,59 +126,108 @@ function TreeView({
     },
     [searchQuery]
   );
+
   return (
     <ul>
-      {nodes.map((n) => (
-        <li
-          key={n.id}
-          onDragOver={(e) => onDragOver(e, n)}
-          onDrop={(e) => onDrop(e, n)}
-          onDragEnter={(e) => onDragEnter(e, n)}
-          onDragLeave={(e) => onDragLeave(e, n)}
-        >
-          <div
-            className="py-1 px-2 hover:opacity-80 rounded"
-            style={{
-              paddingLeft: `${8 + depth * 12}px`,
-              backgroundColor:
-                dragOverId === n.id ? "rgba(37,99,235,0.12)" : undefined,
-              outline:
-                dragOverId === n.id ? "2px solid rgba(37,99,235,0.35)" : "none",
-              outlineOffset: 0,
-            }}
-            onContextMenu={(e) => onContextMenu(e, n)}
-            draggable
-            onDragStart={(e) => onDragStart(e, n)}
+      {nodes.map((n) => {
+        const rawTitle = n.note.title || "(untitled)";
+        const key = rawTitle.trim().toLowerCase();
+        const isDuplicate = duplicateKeys.has(key) && rawTitle !== "(untitled)";
+        const hasChildren = n.children.length > 0;
+        const isCollapsed = hasChildren && collapsed.has(n.id) && !searchActive;
+        return (
+          <li
+            key={n.id}
+            onDragOver={(e) => onDragOver(e, n)}
+            onDrop={(e) => onDrop(e, n)}
+            onDragEnter={(e) => onDragEnter(e, n)}
+            onDragLeave={(e) => onDragLeave(e, n)}
           >
-            <Link
-              href={`/notes/${n.id}`}
-              style={{ color: "var(--foreground)" }}
-              onClick={() => {
-                if (onClose && window.innerWidth < 1024) {
-                  onClose();
-                }
+            <div
+              className="py-1 px-2 hover:opacity-80 rounded group flex items-center gap-1"
+              style={{
+                paddingLeft: `${8 + depth * 12}px`,
+                backgroundColor:
+                  dragOverId === n.id ? "rgba(37,99,235,0.12)" : undefined,
+                outline:
+                  dragOverId === n.id
+                    ? "2px solid rgba(37,99,235,0.35)"
+                    : "none",
+                outlineOffset: 0,
               }}
+              onContextMenu={(e) => onContextMenu(e, n)}
+              draggable
+              onDragStart={(e) => onDragStart(e, n)}
             >
-              {highlight(n.note.title || "(untitled)")}
-            </Link>
-          </div>
-          {n.children.length > 0 && (
-            <TreeView
-              nodes={n.children}
-              depth={depth + 1}
-              onContextMenu={onContextMenu}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onDragEnter={onDragEnter}
-              onDragLeave={onDragLeave}
-              dragOverId={dragOverId}
-              onClose={onClose}
-              searchQuery={searchQuery}
-            />
-          )}
-        </li>
-      ))}
+              {hasChildren && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCollapse(n.id);
+                  }}
+                  aria-label={isCollapsed ? "Expand section" : "Collapse section"}
+                  className="w-4 h-4 flex items-center justify-center text-xs select-none"
+                  style={{
+                    color: "var(--foreground)",
+                    transform: !isCollapsed ? "rotate(90deg)" : "rotate(0deg)",
+                    transition: "transform 0.15s ease",
+                  }}
+                >
+                  ▶
+                </button>
+              )}
+              <Link
+                href={`/notes/${n.id}`}
+                style={{ color: "var(--foreground)", position: "relative" }}
+                onClick={() => {
+                  if (onClose && window.innerWidth < 1024) {
+                    onClose();
+                  }
+                }}
+                className={isDuplicate ? "relative" : undefined}
+              >
+                {highlight(rawTitle)}
+                {isDuplicate && (
+                  <span
+                    className="ml-1 text-[10px] px-1 py-0.5 rounded bg-red-500/70 text-white hidden md:inline"
+                    title="Duplicate title"
+                  >
+                    dup
+                  </span>
+                )}
+              </Link>
+              {isDuplicate && (
+                <span
+                  className="md:hidden text-red-500 text-xs"
+                  title="Duplicate title"
+                >
+                  •
+                </span>
+              )}
+            </div>
+            {hasChildren && !isCollapsed && (
+              <TreeView
+                nodes={n.children}
+                depth={depth + 1}
+                onContextMenu={onContextMenu}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                onDragEnter={onDragEnter}
+                onDragLeave={onDragLeave}
+                dragOverId={dragOverId}
+                onClose={onClose}
+                searchQuery={searchQuery}
+                duplicateKeys={duplicateKeys}
+                collapsed={collapsed}
+                toggleCollapse={toggleCollapse}
+                searchActive={searchActive}
+              />
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -178,6 +235,8 @@ function TreeView({
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { notes } = useNotesCache();
   const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [collapsedInitialized, setCollapsedInitialized] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [menu, setMenu] = useState<{
     x: number;
@@ -208,6 +267,68 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     };
     return filterNodes(tree);
   }, [tree, search]);
+
+  const searchActive = search.trim().length > 0;
+
+  const toggleCollapse = useCallback((id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      // Persist to localStorage (best effort)
+      try {
+        localStorage.setItem('sidebarCollapsed', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Load persisted collapsed state
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('sidebarCollapsed');
+      if (raw) {
+        const arr: unknown = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          setCollapsed(new Set(arr.filter((x) => typeof x === 'string')));
+          setCollapsedInitialized(true); // we have a saved state, skip default collapse
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Default collapse all parents if no persisted state
+  useEffect(() => {
+    if (collapsedInitialized) return; // already initialized from storage
+    // Collect all nodes that have children
+    const parentIds: string[] = [];
+    const traverse = (nodes: TreeNode[]) => {
+      for (const n of nodes) {
+        if (n.children.length > 0) {
+          parentIds.push(n.id);
+          traverse(n.children);
+        }
+      }
+    };
+    traverse(tree);
+    if (parentIds.length) {
+      setCollapsed(new Set(parentIds));
+    }
+    setCollapsedInitialized(true);
+  }, [tree, collapsedInitialized]);
+
+  // Detect duplicate titles (case-insensitive, trimmed) excluding empty titles
+  const duplicateTitleKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    notes.forEach((n) => {
+      const key = (n.title || "").trim().toLowerCase();
+      if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return new Set(
+      Array.from(counts.entries())
+        .filter(([, c]) => c > 1)
+        .map(([k]) => k)
+    );
+  }, [notes]);
 
   const parentMap = useMemo(() => {
     const map = new Map<string, string | null | undefined>();
@@ -256,7 +377,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         },
         " "
       );
-  router.push(`/notes/${newId}?new=1`);
+      router.push(`/notes/${newId}?new=1`);
       setMenu(null);
     },
     [router, user, canEdit]
@@ -332,7 +453,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       const target = e.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
-        const isEditable = target instanceof HTMLElement && target.isContentEditable;
+        const isEditable =
+          target instanceof HTMLElement && target.isContentEditable;
         if (tag === "INPUT" || tag === "TEXTAREA" || isEditable) {
           // Allow re-trigger even if already focused; no early return necessary
         }
@@ -370,7 +492,10 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       >
         Notes
       </div>
-      <div className="px-3 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+      <div
+        className="px-3 py-2"
+        style={{ borderBottom: "1px solid var(--border)" }}
+      >
         <div className="relative">
           <input
             value={search}
@@ -384,6 +509,13 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             }}
             ref={searchRef}
           />
+          {duplicateTitleKeys.size > 0 && (
+            <div className="mt-2 text-[11px] text-red-500 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+              {duplicateTitleKeys.size} duplicate title
+              {duplicateTitleKeys.size > 1 ? " groups" : " group"} detected
+            </div>
+          )}
           {search && (
             <button
               onClick={() => setSearch("")}
@@ -408,6 +540,10 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           dragOverId={dragOverId}
           onClose={onClose}
           searchQuery={search}
+          duplicateKeys={duplicateTitleKeys}
+          collapsed={collapsed}
+          toggleCollapse={toggleCollapse}
+          searchActive={searchActive}
         />
       </div>
       {menu && (
