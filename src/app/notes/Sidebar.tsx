@@ -82,8 +82,8 @@ function TreeView({
   onClose,
   searchQuery,
   duplicateKeys,
-  collapsed,
-  toggleCollapse,
+  expanded,
+  toggleExpand,
   searchActive,
   pathname,
 }: {
@@ -99,8 +99,8 @@ function TreeView({
   onClose?: () => void;
   searchQuery?: string;
   duplicateKeys: Set<string>;
-  collapsed: Set<string>;
-  toggleCollapse: (id: string) => void;
+  expanded: Set<string>;
+  toggleExpand: (id: string) => void;
   searchActive: boolean;
   pathname: string;
 }) {
@@ -137,7 +137,7 @@ function TreeView({
         const key = rawTitle.trim().toLowerCase();
         const isDuplicate = duplicateKeys.has(key) && rawTitle !== "(untitled)";
         const hasChildren = n.children.length > 0;
-        const isCollapsed = hasChildren && collapsed.has(n.id) && !searchActive;
+        const isCollapsed = hasChildren && !expanded.has(n.id) && !searchActive;
         return (
           <li
             key={n.id}
@@ -167,7 +167,7 @@ function TreeView({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleCollapse(n.id);
+                    toggleExpand(n.id);
                   }}
                   aria-label={
                     isCollapsed ? "Expand section" : "Collapse section"
@@ -181,7 +181,7 @@ function TreeView({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      toggleCollapse(n.id);
+                      toggleExpand(n.id);
                     }
                   }}
                 >
@@ -233,8 +233,8 @@ function TreeView({
                 onClose={onClose}
                 searchQuery={searchQuery}
                 duplicateKeys={duplicateKeys}
-                collapsed={collapsed}
-                toggleCollapse={toggleCollapse}
+                expanded={expanded}
+                toggleExpand={toggleExpand}
                 searchActive={searchActive}
                 pathname={pathname}
               />
@@ -250,8 +250,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname() || "";
   const { notes } = useNotesCache();
   const [search, setSearch] = useState("");
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
-  const [collapsedInitialized, setCollapsedInitialized] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [parentIds, setParentIds] = useState<string[]>([]);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [menu, setMenu] = useState<{
     x: number;
@@ -285,15 +285,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const searchActive = search.trim().length > 0;
 
-  const toggleCollapse = useCallback((id: string) => {
-    setCollapsed((prev) => {
+  const toggleExpand = useCallback((id: string) => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      // Persist to localStorage (best effort)
       try {
         localStorage.setItem(
-          "sidebarCollapsed",
+          "sidebarExpanded",
           JSON.stringify(Array.from(next))
         );
       } catch {}
@@ -301,39 +300,68 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     });
   }, []);
 
-  // Load persisted collapsed state
+  // Collect parent ids whenever tree changes
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("sidebarCollapsed");
-      if (raw) {
-        const arr: unknown = JSON.parse(raw);
-        if (Array.isArray(arr)) {
-          setCollapsed(new Set(arr.filter((x) => typeof x === "string")));
-          setCollapsedInitialized(true); // we have a saved state, skip default collapse
-        }
-      }
-    } catch {}
-  }, []);
-
-  // Default collapse all parents if no persisted state
-  useEffect(() => {
-    if (collapsedInitialized) return; // already initialized from storage
-    // Collect all nodes that have children
-    const parentIds: string[] = [];
+    const p: string[] = [];
     const traverse = (nodes: TreeNode[]) => {
       for (const n of nodes) {
         if (n.children.length > 0) {
-          parentIds.push(n.id);
+          p.push(n.id);
           traverse(n.children);
         }
       }
     };
     traverse(tree);
-    if (parentIds.length) {
-      setCollapsed(new Set(parentIds));
-    }
-    setCollapsedInitialized(true);
-  }, [tree, collapsedInitialized]);
+    setParentIds(p);
+  }, [tree]);
+
+  // Load persisted expanded state (new) or migrate old collapsed state
+  useEffect(() => {
+    try {
+      const rawNew = localStorage.getItem("sidebarExpanded");
+      if (rawNew) {
+        const arr: unknown = JSON.parse(rawNew);
+        if (Array.isArray(arr)) {
+          setExpanded(new Set(arr.filter((x) => typeof x === "string")));
+          return;
+        }
+      }
+      // Migration path: invert old collapsed set if present
+      const rawOld = localStorage.getItem("sidebarCollapsed");
+      if (rawOld) {
+        const arr: unknown = JSON.parse(rawOld);
+        if (Array.isArray(arr)) {
+          const collapsedOld = new Set(
+            arr.filter((x) => typeof x === "string") as string[]
+          );
+          // expanded = allParents - collapsedOld
+          const expandedDerived = parentIds.filter(
+            (id) => !collapsedOld.has(id)
+          );
+          setExpanded(new Set(expandedDerived));
+          localStorage.setItem(
+            "sidebarExpanded",
+            JSON.stringify(expandedDerived)
+          );
+        }
+      }
+    } catch {}
+  }, [parentIds]);
+
+  // Expand/Collapse All handlers
+  const expandAll = useCallback(() => {
+    setExpanded(new Set(parentIds));
+    try {
+      localStorage.setItem("sidebarExpanded", JSON.stringify(parentIds));
+    } catch {}
+  }, [parentIds]);
+
+  const collapseAll = useCallback(() => {
+    setExpanded(new Set());
+    try {
+      localStorage.setItem("sidebarExpanded", JSON.stringify([]));
+    } catch {}
+  }, []);
 
   // Detect duplicate titles (case-insensitive, trimmed) excluding empty titles
   const duplicateTitleKeys = useMemo(() => {
@@ -510,7 +538,25 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         onDragEnter={onDragEnterRoot}
         onDragLeave={onDragLeaveRoot}
       >
-        Notes
+        <span>Notes</span>
+        <button
+          onClick={() =>
+            expanded.size < parentIds.length ? expandAll() : collapseAll()
+          }
+          className="text-[10px] px-2 py-1 rounded border uppercase tracking-wide"
+          style={{
+            background: "var(--surface-secondary)",
+            borderColor: "var(--border)",
+            color: "var(--muted)",
+          }}
+          aria-label={
+            expanded.size < parentIds.length
+              ? "Expand all sections"
+              : "Collapse all sections"
+          }
+        >
+          {expanded.size < parentIds.length ? "Expand All" : "Collapse All"}
+        </button>
       </div>
       <div
         className="px-3 py-2"
@@ -558,8 +604,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           onClose={onClose}
           searchQuery={search}
           duplicateKeys={duplicateTitleKeys}
-          collapsed={collapsed}
-          toggleCollapse={toggleCollapse}
+          expanded={expanded}
+          toggleExpand={toggleExpand}
           searchActive={searchActive}
           pathname={pathname}
         />
