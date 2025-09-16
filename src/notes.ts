@@ -32,6 +32,7 @@ export const NoteSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional(),
   parentId: z.string().nullable().optional(),
   noteType: z.enum(["note", "folder"]).optional(),
+  deleted: z.boolean().optional(),
 });
 
 export type Note = z.infer<typeof NoteSchema>;
@@ -52,6 +53,7 @@ export async function createNote(note: Omit<Note, "createdAt" | "updatedAt">) {
     titleLower: (note.title ?? "").toLowerCase(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+    deleted: false,
   });
   return ref.id;
 }
@@ -262,4 +264,44 @@ export function canEdit(
 
   // Then check note-specific permissions (same as canRead for now)
   return canRead(note, userId, userRole);
+}
+
+// --- Destructive utilities ---
+// Recursively delete a note, its block subcollection, and all descendant notes.
+// Caution: This performs multiple sequential Firestore queries; for very deep
+// hierarchies this could take time. Could be optimized with a Cloud Function or
+// batched writes if needed.
+// Soft-delete: mark note & descendants as deleted=true (cascades).
+// Keeps data & blocks for later restore.
+export async function softDeleteNoteAndDescendants(noteId: string) {
+  async function markRecursive(id: string): Promise<void> {
+    const childrenSnap = await getDocs(
+      query(collection(db, "notes"), where("parentId", "==", id))
+    );
+    for (const child of childrenSnap.docs) {
+      await markRecursive(child.id);
+    }
+    await updateDoc(doc(db, "notes", id), {
+      deleted: true,
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await markRecursive(noteId);
+}
+
+// (Optional future) restore a subtree
+export async function restoreNoteAndDescendants(noteId: string) {
+  async function restoreRecursive(id: string): Promise<void> {
+    const childrenSnap = await getDocs(
+      query(collection(db, "notes"), where("parentId", "==", id))
+    );
+    for (const child of childrenSnap.docs) {
+      await restoreRecursive(child.id);
+    }
+    await updateDoc(doc(db, "notes", id), {
+      deleted: false,
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await restoreRecursive(noteId);
 }

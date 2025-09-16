@@ -3,7 +3,11 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createNoteWithBlock, updateNote } from "../../notes";
+import {
+  createNoteWithBlock,
+  updateNote,
+  softDeleteNoteAndDescendants,
+} from "../../notes";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../auth";
 import { usePermissions } from "../../hooks/usePermissionsCache";
@@ -258,6 +262,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     y: number;
     nodeId: string;
   } | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragOverRoot, setDragOverRoot] = useState(false);
@@ -434,6 +439,25 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     e.preventDefault();
     setMenu({ x: e.clientX, y: e.clientY, nodeId: node.id });
   }, []);
+
+  // Close context menu on outside click / escape
+  useEffect(() => {
+    if (!menu) return;
+    const handle = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenu(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(null);
+    };
+    window.addEventListener("mousedown", handle);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("mousedown", handle);
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [menu]);
 
   const onDragStart = useCallback((e: React.DragEvent, node: TreeNode) => {
     setDraggedId(node.id);
@@ -612,6 +636,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
       {menu && (
         <div
+          ref={menuRef}
           style={{
             position: "fixed",
             left: menu.x,
@@ -622,16 +647,30 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             borderRadius: 6,
             boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             zIndex: 1000,
-            minWidth: 160,
+            minWidth: 200,
+            padding: 4,
           }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <button
-            className="w-full text-left px-3 py-2 hover:opacity-80"
+            className="w-full text-left px-3 py-2 rounded hover:bg-[var(--surface-secondary)] text-sm"
             onClick={() => handleAddSubNote(menu.nodeId)}
           >
-            Add sub-note
+            ➕ Add sub-note
           </button>
+          <button
+            className="w-full text-left px-3 py-2 rounded hover:bg-[var(--surface-secondary)] text-sm text-red-600"
+            onClick={async () => {
+              if (!confirm("Move this note (and children) to trash?")) return;
+              await softDeleteNoteAndDescendants(menu.nodeId);
+              setMenu(null);
+            }}
+          >
+            🗑️ Trash note
+          </button>
+          <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-[var(--muted)] border-t border-[var(--border)] mt-1">
+            Tip: Drag a note into the top bar to make it a root.
+          </div>
         </div>
       )}
     </aside>

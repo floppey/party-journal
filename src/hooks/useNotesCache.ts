@@ -69,6 +69,7 @@ class NotesCache {
         this.notes.clear();
         snapshot.docs.forEach((doc) => {
           const data = doc.data();
+          if (data.deleted) return; // skip soft-deleted notes
           this.notes.set(doc.id, {
             id: doc.id,
             title: data.title ?? "",
