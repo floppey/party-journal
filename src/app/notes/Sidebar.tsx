@@ -15,7 +15,7 @@ import { useNotesCache, type NoteInfo } from "../../hooks/useNotesCache";
 
 type TreeNode = { id: string; note: NoteInfo; children: TreeNode[] };
 
-// Natural sorting function that handles numbers properly
+// Natural sorting function that handles numbers properly; numeric segments are compared DESC so higher numbers come first
 function naturalCompare(a: string, b: string): number {
   // Convert strings to arrays of parts (text and numbers)
   const aParts = a.match(/(\d+|\D+)/g) || [];
@@ -36,7 +36,7 @@ function naturalCompare(a: string, b: string): number {
       const aNum = parseInt(aPart, 10);
       const bNum = parseInt(bPart, 10);
       if (aNum !== bNum) {
-        return aNum - bNum;
+        return bNum - aNum;
       }
     } else {
       // Compare as strings (case-insensitive)
@@ -198,6 +198,10 @@ function TreeView({
                 onClick={() => {
                   if (onClose && window.innerWidth < 1024) {
                     onClose();
+                  }
+                  // Auto-expand if node has children and is currently collapsed
+                  if (hasChildren && !expanded.has(n.id)) {
+                    toggleExpand(n.id);
                   }
                 }}
                 className={`${isDuplicate ? "relative" : ""} ${
