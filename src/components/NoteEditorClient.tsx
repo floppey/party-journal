@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useMemo } from "react";
 import {
   Note,
@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../auth";
 import { Markdown } from "./Markdown";
 import { usePermissions } from "../hooks/usePermissionsCache";
+import { useNotesCache } from "../hooks/useNotesCache";
 
 export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const [note, setNote] = useState<Note | null>(null);
@@ -54,6 +55,219 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
   const noteLoadedRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const adminTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const { notes } = useNotesCache();
+
+  // Debounced save of text -> blocks reconciliation (defined early for stable callback refs)
+  const scheduleSave = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      if (!noteId) return;
+      const currentText = editorTextRef.current;
+      const lines = currentText.split("\n");
+      const currentBlocks = blocksRef.current;
+      const ops: Array<Promise<unknown>> = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const block = currentBlocks[i];
+        if (block) {
+          if (block.text !== line || block.index !== i) {
+            ops.push(updateBlock(noteId, block.id!, { text: line, index: i }));
+          }
+        } else {
+          if (line.length > 0 || i < lines.length - 1) {
+            ops.push(
+              createBlock(noteId, { index: i, type: "line", text: line })
+            );
+          }
+        }
+      }
+      for (let i = lines.length; i < currentBlocks.length; i++) {
+        const block = currentBlocks[i];
+        if (block?.id) ops.push(deleteBlock(noteId, block.id));
+      }
+      try {
+        await Promise.all(ops);
+      } catch (error) {
+        console.error("Save error:", error);
+        return;
+      }
+      if (editorTextRef.current === currentText) {
+        setTimeout(() => {
+          if (editorTextRef.current === currentText) {
+            typingRef.current = false;
+          }
+        }, 50);
+      }
+    }, 300);
+  }, [noteId]);
+
+  // [[ link suggestions state
+  const [linkQuery, setLinkQuery] = useState("");
+  const [linkStart, setLinkStart] = useState<number | null>(null); // index where the [[ began
+  const [showLinkMenu, setShowLinkMenu] = useState(false);
+  const [linkIndex, setLinkIndex] = useState(0); // highlighted suggestion
+  const [linkPos, setLinkPos] = useState<{ left: number; top: number }>({
+    left: 0,
+    top: 0,
+  });
+
+  const MAX_SUGGESTIONS = 12;
+
+  const filteredLinkSuggestions = useMemo(() => {
+    if (!showLinkMenu || linkQuery.length < 2) return [];
+    const q = linkQuery.toLowerCase();
+    const prefixes: typeof notes = [];
+    const contains: typeof notes = [];
+    for (const n of notes) {
+      if (n.id === noteId) continue; // don't link to self
+      const titleLower = (n.title || "").toLowerCase();
+      if (titleLower.startsWith(q)) prefixes.push(n);
+      else if (titleLower.includes(q)) contains.push(n);
+    }
+    prefixes.sort((a, b) => a.title.localeCompare(b.title));
+    contains.sort((a, b) => a.title.localeCompare(b.title));
+    return [...prefixes, ...contains].slice(0, MAX_SUGGESTIONS);
+  }, [notes, linkQuery, showLinkMenu, noteId]);
+
+  // Helper: detect active [[ query
+  // Compute caret (selectionStart) viewport coordinates for popup placement
+  const computeCaretViewportPos = (el: HTMLTextAreaElement, sel: number) => {
+    const style = window.getComputedStyle(el);
+    // Mirror element
+    const div = document.createElement("div");
+    const props = [
+      "boxSizing",
+      "width",
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft",
+      "borderTopWidth",
+      "borderRightWidth",
+      "borderBottomWidth",
+      "borderLeftWidth",
+      "fontStyle",
+      "fontVariant",
+      "fontWeight",
+      "fontStretch",
+      "fontSize",
+      "lineHeight",
+      "fontFamily",
+      "textAlign",
+      "textTransform",
+      "textIndent",
+      "letterSpacing",
+      "wordSpacing",
+      "whiteSpace",
+      "overflowWrap",
+    ];
+    props.forEach((p) => {
+      // @ts-expect-error dynamic style copy
+      div.style[p] = style[p];
+    });
+    div.style.position = "absolute";
+    div.style.visibility = "hidden";
+    div.style.whiteSpace = "pre-wrap";
+    div.style.wordWrap = "break-word";
+    // Account for current scroll by adjusting content offset later
+    const textBefore = el.value.substring(0, sel);
+    // Add zero-width space to ensure span has box
+    div.textContent = textBefore.replace(/\n$/, "\n\u200b");
+    const span = document.createElement("span");
+    span.textContent = "\u200b";
+    div.appendChild(span);
+    const taRect = el.getBoundingClientRect();
+    // Position mirror at textarea top-left so measurements map to viewport
+    div.style.top = taRect.top + "px";
+    div.style.left = taRect.left + "px";
+    document.body.appendChild(div);
+    const spanRect = span.getBoundingClientRect();
+    document.body.removeChild(div);
+    // Adjust for textarea internal scroll
+    const left = spanRect.left - el.scrollLeft;
+    const top = spanRect.bottom - el.scrollTop + 4; // gap below caret
+    // Clamp within viewport horizontal bounds
+    const clampedLeft = Math.min(Math.max(8, left), window.innerWidth - 280);
+    const clampedTop = Math.min(top, window.innerHeight - 100);
+    return { left: clampedLeft, top: clampedTop };
+  };
+
+  const detectLinkTrigger = useCallback(() => {
+    if (!textareaRef.current) return;
+    const el = textareaRef.current;
+    const cursor = el.selectionStart;
+    const text = el.value;
+    // Find last occurrence of [[ before cursor
+    const prefix = text.slice(0, cursor);
+    const lastOpen = prefix.lastIndexOf("[[");
+    if (lastOpen === -1) {
+      setShowLinkMenu(false);
+      setLinkStart(null);
+      return;
+    }
+    // Ensure there is no closing ]] between lastOpen and cursor
+    const after = prefix.slice(lastOpen + 2);
+    if (after.includes("]]")) {
+      setShowLinkMenu(false);
+      setLinkStart(null);
+      return;
+    }
+    // Extract query (allow letters, numbers, spaces, dashes, apostrophes)
+    const query = after; // we can further trim leading spaces
+    // Stop if newline encountered
+    if (query.includes("\n")) {
+      setShowLinkMenu(false);
+      setLinkStart(null);
+      return;
+    }
+    const trimmed = query.trimStart();
+    const leadingSpaces = query.length - trimmed.length;
+    // If user added space right after [[ but nothing else, don't show yet
+    const effectiveQuery = trimmed;
+    if (effectiveQuery.length >= 2) {
+      setLinkQuery(effectiveQuery);
+      setLinkStart(lastOpen + 2 + leadingSpaces);
+      setShowLinkMenu(true);
+      setLinkIndex(0);
+      try {
+        setLinkPos(computeCaretViewportPos(el, cursor));
+      } catch {}
+    } else {
+      // Keep tracking but hide until 2 chars
+      setLinkQuery(effectiveQuery);
+      setLinkStart(lastOpen + 2 + leadingSpaces);
+      setShowLinkMenu(false);
+    }
+  }, []);
+
+  const insertLinkAtCursor = useCallback(
+    (titleToInsert: string) => {
+      if (!textareaRef.current || linkStart == null) return;
+      const el = textareaRef.current;
+      const cursor = el.selectionStart;
+      const text = el.value;
+      // Need actual position of the initial [[ sequence
+      const openIdx = text.lastIndexOf("[[", linkStart);
+      if (openIdx === -1) return;
+      const after = text.slice(cursor);
+      const insertion = `[[${titleToInsert}]]`;
+      const newValue = text.slice(0, openIdx) + insertion + after;
+      el.value = newValue;
+      setEditorText(newValue);
+      editorTextRef.current = newValue;
+      const newCursor = openIdx + insertion.length;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(newCursor, newCursor);
+      });
+      // cleanup
+      setShowLinkMenu(false);
+      setLinkStart(null);
+      setLinkQuery("");
+      scheduleSave();
+    },
+    [linkStart, scheduleSave]
+  );
 
   // Subscribe to note metadata (title, etc.)
   useEffect(() => {
@@ -122,62 +336,6 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
     });
     return () => unsub();
   }, [noteId]);
-
-  // Debounced save of text -> blocks reconciliation
-  const scheduleSave = () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      if (!noteId) return;
-
-      // Capture current state before async operation
-      const currentText = editorTextRef.current;
-      const lines = currentText.split("\n");
-      const currentBlocks = blocksRef.current;
-      const ops: Array<Promise<unknown>> = [];
-
-      // Update existing and create missing blocks
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const block = currentBlocks[i];
-        if (block) {
-          if (block.text !== line || block.index !== i) {
-            ops.push(updateBlock(noteId, block.id!, { text: line, index: i }));
-          }
-        } else {
-          // Don't persist trailing extra blank line
-          if (line.length > 0 || i < lines.length - 1) {
-            ops.push(
-              createBlock(noteId, { index: i, type: "line", text: line })
-            );
-          }
-        }
-      }
-
-      // Delete extra blocks beyond current lines
-      for (let i = lines.length; i < currentBlocks.length; i++) {
-        const block = currentBlocks[i];
-        if (block?.id) ops.push(deleteBlock(noteId, block.id));
-      }
-
-      try {
-        await Promise.all(ops);
-      } catch (error) {
-        console.error("Save error:", error);
-        // On error, don't reset typing flag to prevent remote overwrite
-        return;
-      }
-
-      // Only reset typing flag if the text hasn't changed during the save
-      if (editorTextRef.current === currentText) {
-        // Still give a small delay to ensure all keystrokes are captured
-        setTimeout(() => {
-          if (editorTextRef.current === currentText) {
-            typingRef.current = false;
-          }
-        }, 50);
-      }
-    }, 300);
-  };
 
   // Admin notes save function
   const scheduleAdminSave = () => {
@@ -270,34 +428,140 @@ export default function NoteEditorClient({ noteId }: { noteId: string }) {
       {/* Content */}
       {mode === "edit" && canCurrentUserEdit ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <textarea
-            ref={textareaRef}
-            value={editorText}
-            onChange={(e) => {
-              typingRef.current = true;
-              const val = e.target.value;
-              editorTextRef.current = val;
-              setEditorText(val);
-              scheduleSave();
-            }}
-            onFocus={() => {
-              typingRef.current = true;
-            }}
-            onBlur={() => {
-              // Give a small delay before allowing remote updates to prevent losing final keystrokes
-              setTimeout(() => {
-                typingRef.current = false;
-              }, 100);
-            }}
-            rows={20}
-            className="w-full p-3 border rounded font-mono text-sm bg-transparent"
-            style={{
-              color: "var(--foreground)",
-              borderColor: "var(--border)",
-              lineHeight: "1.5",
-            }}
-            placeholder="Start typing markdown..."
-          />
+          <div className="relative w-full">
+            <textarea
+              ref={textareaRef}
+              value={editorText}
+              onChange={(e) => {
+                typingRef.current = true;
+                const val = e.target.value;
+                editorTextRef.current = val;
+                setEditorText(val);
+                scheduleSave();
+                detectLinkTrigger();
+              }}
+              onKeyDown={(e) => {
+                if (showLinkMenu && filteredLinkSuggestions.length) {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setLinkIndex(
+                      (i) => (i + 1) % filteredLinkSuggestions.length
+                    );
+                    return;
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setLinkIndex(
+                      (i) =>
+                        (i - 1 + filteredLinkSuggestions.length) %
+                        filteredLinkSuggestions.length
+                    );
+                    return;
+                  } else if (e.key === "Enter" || e.key === "Tab") {
+                    e.preventDefault();
+                    insertLinkAtCursor(
+                      filteredLinkSuggestions[linkIndex].title
+                    );
+                    return;
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    setShowLinkMenu(false);
+                    return;
+                  }
+                }
+                // Re-detect on navigation/edit keys
+                requestAnimationFrame(() => detectLinkTrigger());
+              }}
+              onFocus={() => {
+                typingRef.current = true;
+              }}
+              onBlur={() => {
+                // Give a small delay before allowing remote updates to prevent losing final keystrokes
+                setTimeout(() => {
+                  typingRef.current = false;
+                }, 100);
+                // hide popup when leaving editor
+                setShowLinkMenu(false);
+              }}
+              rows={24}
+              className="w-full p-3 border rounded font-mono text-sm bg-transparent"
+              style={{
+                color: "var(--foreground)",
+                borderColor: "var(--border)",
+                lineHeight: "1.5",
+                minHeight: "60vh",
+              }}
+              placeholder="Start typing markdown..."
+            />
+            {/* Link suggestions popup */}
+            {showLinkMenu && filteredLinkSuggestions.length > 0 && (
+              <div
+                className="fixed z-[999] w-64 max-h-64 overflow-auto rounded border shadow-lg text-sm"
+                style={{
+                  background: "var(--surface)",
+                  borderColor: "var(--border)",
+                  left: linkPos.left,
+                  top: linkPos.top,
+                }}
+              >
+                <div
+                  className="px-2 py-1 text-[10px] uppercase tracking-wide opacity-60 border-b"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  Link to note
+                </div>
+                {filteredLinkSuggestions.map((s, i) => {
+                  const dup =
+                    filteredLinkSuggestions.filter(
+                      (x) => x.title.toLowerCase() === s.title.toLowerCase()
+                    ).length > 1;
+                  return (
+                    <button
+                      key={s.id + i}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        insertLinkAtCursor(s.title);
+                      }}
+                      className={`w-full text-left px-2 py-1 hover:bg-[var(--accent-bg)] transition-colors ${
+                        i === linkIndex ? "bg-[var(--accent-bg)]" : ""
+                      }`}
+                      style={{
+                        color: i === linkIndex ? "var(--accent)" : undefined,
+                      }}
+                    >
+                      <span className="truncate block flex items-center gap-1">
+                        {s.title || "(untitled)"}
+                        {dup && (
+                          <span className="ml-1 text-[10px] text-red-500 uppercase">
+                            dup
+                          </span>
+                        )}
+                        {(() => {
+                          const q = linkQuery.toLowerCase();
+                          const tl = (s.title || "").toLowerCase();
+                          if (tl.startsWith(q)) return null; // already a prefix match
+                          if (tl.includes(q))
+                            return (
+                              <span className="ml-auto text-[9px] px-1 rounded bg-[var(--surface-secondary)] opacity-70">
+                                contains
+                              </span>
+                            );
+                          return null;
+                        })()}
+                      </span>
+                    </button>
+                  );
+                })}
+                {filteredLinkSuggestions.length === MAX_SUGGESTIONS && (
+                  <div
+                    className="px-2 py-1 text-[10px] opacity-60 border-t"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    More results truncated…
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div
             className="w-full p-3 border rounded overflow-auto prose dark:prose-invert bg-transparent"
             style={{
